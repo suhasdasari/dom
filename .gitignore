@@ -95,7 +95,6 @@ logs
 # Electron specific
 dist/
 out/
-app/
 release/
 
 # macOS
