@@ -68,7 +68,7 @@ body {
 
 /* Logo rotation animation for main interface */
 #main-interface .logo-image {
-    animation: rotateLogo 2s ease-in-out, continuousRotate 3s linear infinite;
+    animation: rotateLogo 4s ease-in-out, continuousRotate 8s linear infinite;
 }
 
 @keyframes rotateLogo {
