@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REMOAI Desktop</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Landing Page -->
+    <div id="landing-page" class="page active">
+        <div class="container">
+            <!-- Logo/Central Graphic -->
+            <div class="logo-container">
+                <div class="logo-circle">
+                    <img src="assets/logo.png" alt="Logo" class="logo-image">
+                </div>
+            </div>
+            
+            <!-- Voice Chat Button -->
+            <div class="button-container">
+                <button id="get-started-btn" class="voice-chat-btn">
+                    <img src="assets/voice-icon.png" alt="Voice Chat" class="voice-icon">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Interface -->
+    <div id="main-interface" class="page">
+        <div class="container">
+            
+            <!-- Central Logo -->
+            <div class="logo-container">
+                <div class="logo-circle">
+                    <img src="assets/logo.png" alt="Logo" class="logo-image">
+                </div>
+            </div>
+            
+            <!-- Bottom Controls -->
+            <div class="bottom-controls">
+                <button id="mic-btn" class="control-btn mic-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                </button>
+                <button id="close-btn" class="control-btn close-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
