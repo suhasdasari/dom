@@ -34,8 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Handle microphone button click
   micBtn.addEventListener("click", function () {
     console.log("Microphone button clicked");
-    // Add your microphone functionality here
-    // For example: start/stop recording, toggle mute, etc.
+    toggleRecording();
   });
 
   // Handle close button click
@@ -106,6 +105,143 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Scroll to bottom
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  // Voice recording and transcription
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let isRecording = false;
+
+  async function toggleRecording() {
+    try {
+      if (!isRecording) {
+        await startRecording();
+      } else {
+        await stopRecording();
+      }
+    } catch (err) {
+      console.error("Recording error:", err);
+      setMicVisualState(false);
+      isRecording = false;
+    }
+  }
+
+  function setMicVisualState(active) {
+    if (active) {
+      micBtn.classList.add("recording");
+    } else {
+      micBtn.classList.remove("recording");
+    }
+  }
+
+  async function startRecording() {
+    // Request mic with reasonable constraints
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        channelCount: 1,
+        sampleRate: 48000,
+      },
+    });
+
+    recordedChunks = [];
+
+    // Prefer Opus in WebM which backend expects
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : MediaRecorder.isTypeSupported("audio/webm")
+      ? "audio/webm"
+      : "";
+
+    mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) {
+        recordedChunks.push(e.data);
+      }
+    };
+
+    mediaRecorder.onstop = async () => {
+      try {
+        const blob = new Blob(recordedChunks, {
+          type: mimeType || "audio/webm",
+        });
+        const base64Audio = await blobToBase64(blob);
+
+        // Send to backend Whisper endpoint
+        const resp = await fetch("http://localhost:3001/api/transcribe", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            audioData: base64Audio,
+            audioFormat: "webm",
+          }),
+        });
+
+        let result;
+        if (!resp.ok) {
+          // Try to read error payload to show a helpful message
+          try {
+            const errJson = await resp.json();
+            throw new Error(errJson.error || `HTTP ${resp.status}`);
+          } catch (_) {
+            throw new Error(`Transcription failed: HTTP ${resp.status}`);
+          }
+        } else {
+          result = await resp.json();
+          if (!result.success) {
+            throw new Error(result.error || "Transcription unsuccessful");
+          }
+        }
+
+        const text = (result.transcription || "").trim();
+        if (text) {
+          messageInput.value = text;
+          await sendMessage();
+        }
+      } catch (err) {
+        console.error("Transcription error:", err);
+        const friendly =
+          (err && err.message) ||
+          "Sorry, I couldn't transcribe your audio. Please try again.";
+        addMessageToChat(`Transcription error: ${friendly}`, "bot");
+      } finally {
+        // Stop all tracks to release the mic
+        try {
+          mediaRecorder &&
+            mediaRecorder.stream &&
+            mediaRecorder.stream.getTracks().forEach((t) => t.stop());
+        } catch (_) {}
+      }
+    };
+
+    mediaRecorder.start();
+    isRecording = true;
+    setMicVisualState(true);
+  }
+
+  async function stopRecording() {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      isRecording = false;
+      setMicVisualState(false);
+    }
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result;
+        const base64 = typeof dataUrl === "string" ? dataUrl.split(",")[1] : "";
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   // Add some interactive feedback
