@@ -17,6 +17,39 @@
                 </div>
             </div>
             
+            <!-- Dependency Status Text -->
+            <div id="dependency-status" class="dependency-status">
+                <p id="status-text">Checking for dependencies...</p>
+            </div>
+            
+            <!-- Dependency Progress Container -->
+            <div id="dependency-progress" class="dependency-progress hidden">
+                <div class="dependency-item">
+                    <div class="dependency-name">OpenAI OSS 2B</div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div id="oss-progress" class="progress-fill"></div>
+                        </div>
+                        <span id="oss-percentage" class="progress-percentage">0%</span>
+                    </div>
+                </div>
+                <div class="dependency-item">
+                    <div class="dependency-name">OpenAI Whisper</div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div id="whisper-progress" class="progress-fill"></div>
+                        </div>
+                        <span id="whisper-percentage" class="progress-percentage">0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Success Message -->
+            <div id="success-message" class="success-message hidden">
+                <div class="success-icon">✓</div>
+                <p>Perfect! You are all set.</p>
+            </div>
+            
             <!-- Voice Chat Button -->
             <div class="button-container">
                 <button id="get-started-btn" class="voice-chat-btn">
@@ -34,6 +67,21 @@
             <div class="logo-container">
                 <div class="logo-circle">
                     <img src="assets/logo.png" alt="Logo" class="logo-image">
+                </div>
+            </div>
+            
+            <!-- Transcription Display -->
+            <div id="transcription-container" class="transcription-container">
+                <div id="transcription-text" class="transcription-text">
+                    Click the microphone to start recording...
+                </div>
+                <div id="recording-status" class="recording-status hidden">
+                    <div class="recording-indicator"></div>
+                    <span>Recording...</span>
+                </div>
+                <div id="processing-status" class="processing-status hidden">
+                    <div class="spinner"></div>
+                    <span>Processing speech...</span>
                 </div>
             </div>
             
