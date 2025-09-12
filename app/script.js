@@ -56,6 +56,12 @@ document.addEventListener("DOMContentLoaded", function () {
     sendBtn.disabled = true;
 
     try {
+      // Persona: Remo, a general-purpose AI personal assistant
+      const personaPreamble =
+        "You are Remo, a helpful, friendly, proactive AI personal assistant. You help users with everyday tasks such as reminders, to-dos, planning, ordering food, finding information, and breaking down steps. Speak in first person as Remo, be concise but warm, and always consider actionable next steps. If something requires real-world actions (like ordering food), explain how you would proceed and ask for required details.";
+
+      const fullPrompt = `${personaPreamble}\n\nUser: ${message}\nRemo:`;
+
       // Send message to Ollama API
       const response = await fetch("http://localhost:11434/api/generate", {
         method: "POST",
@@ -64,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         body: JSON.stringify({
           model: "gpt-oss:20b",
-          prompt: message,
+          prompt: fullPrompt,
           stream: false,
         }),
       });
