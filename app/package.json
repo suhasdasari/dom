@@ -27,7 +27,8 @@
     "appId": "com.remoa.desktop",
     "productName": "REMOAI Desktop",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "resources"
     },
     "files": [
       "**/*",
@@ -37,7 +38,12 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "icon.icns",
       "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
         {
           "target": "zip",
           "arch": ["x64", "arm64"]
@@ -45,6 +51,7 @@
       ]
     },
     "win": {
+      "icon": "icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -53,6 +60,7 @@
       ]
     },
     "linux": {
+      "icon": "icon.png",
       "target": [
         {
           "target": "AppImage",
