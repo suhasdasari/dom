@@ -19,51 +19,53 @@ document.addEventListener('DOMContentLoaded', function() {
     let dependenciesReady = false;
 
     // Initialize app on startup
-    async function initializeApp() {
+    function initializeApp() {
         console.log('Initializing app...');
-        // Disable the recording button initially
-        getStartedBtn.disabled = true;
-        getStartedBtn.style.opacity = '0.5';
-        getStartedBtn.style.cursor = 'not-allowed';
+        // Enable the recording button immediately - let user try to use the app
+        enableRecordingButton();
         
-        // Start dependency checking immediately
-        await checkDependencies();
+        // Start dependency checking in background (non-blocking)
+        checkDependenciesInBackground();
     }
 
-    // Check dependencies with real backend
-    async function checkDependencies() {
-        try {
-            // Check current dependency status
-            const response = await fetch('http://localhost:3001/api/dependencies/check');
-            const data = await response.json();
-            
-            if (data.success && data.allInstalled) {
-                // All dependencies are already installed
-                setTimeout(() => {
-                    statusText.textContent = 'All dependencies ready!';
+    // Check dependencies in background (non-blocking)
+    function checkDependenciesInBackground() {
+        // Show initial status briefly
+        statusText.textContent = 'Checking dependencies...';
+        
+        // Start background check without blocking UI
+        setTimeout(async () => {
+            try {
+                const response = await fetch('http://localhost:3001/api/dependencies/check');
+                const data = await response.json();
+                
+                if (data.success && data.allInstalled) {
+                    // All dependencies are already installed - hide everything silently
+                    dependenciesReady = true;
+                    console.log('Dependencies ready!');
                     setTimeout(() => {
                         dependencyStatus.classList.add('hidden');
-                        successMessage.classList.remove('hidden');
-                        // Enable the recording button
-                        enableRecordingButton();
-                    }, 1000);
-                }, 1500);
-            } else {
-                // Some dependencies are missing, start download
-                setTimeout(() => {
+                        successMessage.classList.add('hidden');
+                    }, 500);
+                } else {
+                    // Some dependencies are missing, show progress
+                    statusText.textContent = 'Installing missing dependencies...';
                     dependencyProgress.classList.remove('hidden');
                     downloadMissingDependencies();
-                }, 1500);
+                }
+            } catch (error) {
+                console.error('Error checking dependencies:', error);
+                // Hide status silently if there's an error
+                setTimeout(() => {
+                    dependencyStatus.classList.add('hidden');
+                }, 1000);
             }
-        } catch (error) {
-            console.error('Error checking dependencies:', error);
-            // Fallback to showing download progress
-            setTimeout(() => {
-                statusText.textContent = 'Connecting to backend...';
-                dependencyProgress.classList.remove('hidden');
-                downloadMissingDependencies();
-            }, 1500);
-        }
+        }, 1000);
+    }
+
+    // Check dependencies with real backend (legacy function for compatibility)
+    async function checkDependencies() {
+        return checkDependenciesInBackground();
     }
 
     // Download missing dependencies with real backend
@@ -96,11 +98,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Check if both downloads are complete
                         if (oss.status === 'completed' && whisper.status === 'completed') {
                             clearInterval(progressInterval);
+                            dependenciesReady = true;
+                            console.log('All dependencies installed successfully!');
                             setTimeout(() => {
                                 dependencyProgress.classList.add('hidden');
-                                successMessage.classList.remove('hidden');
-                                // Enable the recording button
-                                enableRecordingButton();
+                                dependencyStatus.classList.add('hidden');
+                                successMessage.classList.add('hidden');
                             }, 1000);
                         }
                         
@@ -139,20 +142,22 @@ document.addEventListener('DOMContentLoaded', function() {
         getStartedBtn.disabled = false;
         getStartedBtn.style.opacity = '1';
         getStartedBtn.style.cursor = 'pointer';
-        dependenciesReady = true;
-        console.log('Dependencies ready! Recording button enabled.');
+        console.log('Recording button enabled - user can try to use the app');
     }
 
     // Show main interface when Get Started is clicked
     getStartedBtn.addEventListener('click', function() {
-        if (!dependenciesReady) {
-            console.log('Dependencies not ready yet. Please wait...');
-            return;
-        }
+        // Always allow user to proceed - dependencies will be checked in background
+        console.log('User clicked Get Started - proceeding to main interface');
         
         // Dependencies are ready, proceed to main interface
         landingPage.classList.remove('active');
         mainInterface.classList.add('active');
+        
+        // If dependencies aren't ready yet, show a helpful message
+        if (!dependenciesReady) {
+            transcriptionText.textContent = 'Dependencies are still installing in the background. You can try recording, but it may not work until installation is complete.';
+        }
     });
 
     // Audio recording variables
@@ -275,13 +280,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 transcriptionText.textContent = data.transcription || 'No speech detected.';
                 console.log('Transcription:', data.transcription);
             } else {
-                transcriptionText.textContent = 'Error: ' + data.error;
+                // Check if it's a dependency issue
+                if (data.error && data.error.includes('dependencies')) {
+                    transcriptionText.textContent = 'Dependencies are still installing. Please wait a moment and try again.';
+                } else {
+                    transcriptionText.textContent = 'Error: ' + data.error;
+                }
                 console.error('Transcription error:', data.error);
             }
             
         } catch (error) {
             console.error('Error sending audio for transcription:', error);
-            transcriptionText.textContent = 'Error connecting to transcription service.';
+            // Check if it's a connection issue
+            if (error.message.includes('fetch')) {
+                transcriptionText.textContent = 'Cannot connect to backend service. Please check if dependencies are installed.';
+            } else {
+                transcriptionText.textContent = 'Error connecting to transcription service.';
+            }
         } finally {
             processingStatus.classList.add('hidden');
             micBtn.style.background = '#f5f5f5';
@@ -295,19 +310,16 @@ document.addEventListener('DOMContentLoaded', function() {
         mainInterface.classList.remove('active');
         landingPage.classList.add('active');
         
-        // Reset dependency checking state
-        dependencyStatus.classList.remove('hidden');
-        dependencyProgress.classList.add('hidden');
-        successMessage.classList.add('hidden');
-        statusText.textContent = 'Checking for dependencies...';
-        ossProgress.style.width = '0%';
-        whisperProgress.style.width = '0%';
-        ossPercentage.textContent = '0%';
-        whisperPercentage.textContent = '0%';
-        dependenciesReady = false;
-        
-        // Restart dependency checking
-        initializeApp();
+        // Don't restart dependency checking - just show current status
+        if (dependenciesReady) {
+            dependencyStatus.classList.add('hidden');
+            successMessage.classList.add('hidden');
+        } else {
+            // Show a simple status message
+            statusText.textContent = 'Dependencies are being checked in the background...';
+            dependencyProgress.classList.add('hidden');
+            successMessage.classList.add('hidden');
+        }
     });
 
     // Add some interactive feedback

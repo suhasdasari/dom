@@ -1,7 +1,9 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const { spawn } = require('child_process');
 
 let mainWindow;
+let backendProcess;
 
 function createWindow() {
   // Create the browser window
@@ -27,8 +29,31 @@ function createWindow() {
   }
 }
 
+// Start backend server
+function startBackendServer() {
+  const backendScript = path.join(__dirname, 'backend-server.js');
+  backendProcess = spawn('node', [backendScript], {
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+
+  backendProcess.stdout.on('data', (data) => {
+    console.log('Backend:', data.toString());
+  });
+
+  backendProcess.stderr.on('data', (data) => {
+    console.error('Backend error:', data.toString());
+  });
+
+  backendProcess.on('close', (code) => {
+    console.log(`Backend process exited with code ${code}`);
+  });
+}
+
 // This method will be called when Electron has finished initialization
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  startBackendServer();
+  createWindow();
+});
 
 // Quit when all windows are closed
 app.on('window-all-closed', () => {
@@ -40,5 +65,12 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+  }
+});
+
+// Clean up backend process on app quit
+app.on('before-quit', () => {
+  if (backendProcess) {
+    backendProcess.kill();
   }
 });

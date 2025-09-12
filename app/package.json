@@ -10,7 +10,9 @@
     "build-mac": "electron-builder --mac",
     "build-win": "electron-builder --win",
     "build-linux": "electron-builder --linux",
-    "dist": "electron-builder --publish=never"
+    "dist": "electron-builder --publish=never",
+    "backend": "node backend-server.js",
+    "install-deps": "python3 install-dependencies.py"
   },
   "keywords": [
     "desktop",
@@ -22,6 +24,11 @@
   "devDependencies": {
     "electron": "^28.0.0",
     "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
   },
   "build": {
     "appId": "com.remoa.desktop",
@@ -42,11 +49,17 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ]
     },
@@ -55,7 +68,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -64,7 +79,9 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     }
