@@ -1,5 +1,5 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
+const { app, BrowserWindow } = require("electron");
+const path = require("path");
 
 let mainWindow;
 
@@ -10,19 +10,20 @@ function createWindow() {
     height: 600,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
+      webSecurity: false,
     },
     resizable: false,
     frame: false,
     transparent: true,
-    titleBarStyle: 'hiddenInset'
+    titleBarStyle: "hiddenInset",
   });
 
   // Load the index.html file
-  mainWindow.loadFile('index.html');
+  mainWindow.loadFile("index.html");
 
   // Open DevTools in development
-  if (process.argv.includes('--dev')) {
+  if (process.argv.includes("--dev")) {
     mainWindow.webContents.openDevTools();
   }
 }
@@ -31,13 +32,13 @@ function createWindow() {
 app.whenReady().then(createWindow);
 
 // Quit when all windows are closed
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
