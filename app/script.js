@@ -1,343 +1,201 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const landingPage = document.getElementById('landing-page');
-    const mainInterface = document.getElementById('main-interface');
-    const getStartedBtn = document.getElementById('get-started-btn');
-    const micBtn = document.getElementById('mic-btn');
-    const closeBtn = document.getElementById('close-btn');
-    
-    // Dependency checking elements
-    const dependencyStatus = document.getElementById('dependency-status');
-    const statusText = document.getElementById('status-text');
-    const dependencyProgress = document.getElementById('dependency-progress');
-    const successMessage = document.getElementById('success-message');
-    const ossProgress = document.getElementById('oss-progress');
-    const ossPercentage = document.getElementById('oss-percentage');
-    const whisperProgress = document.getElementById('whisper-progress');
-    const whisperPercentage = document.getElementById('whisper-percentage');
+document.addEventListener("DOMContentLoaded", function () {
+  const landingPage = document.getElementById("landing-page");
+  const mainInterface = document.getElementById("main-interface");
+  const getStartedBtn = document.getElementById("get-started-btn");
+  const micBtn = document.getElementById("mic-btn");
+  const closeBtn = document.getElementById("close-btn");
+  const messageInput = document.getElementById("message-input");
+  const sendBtn = document.getElementById("send-btn");
+  const chatMessages = document.getElementById("chat-messages");
 
-    // App state
-    let dependenciesReady = false;
+  // Conversation state
+  let isWaitingForResponse = false;
+  let conversationHistory = [];
 
-    // Initialize app on startup
-    function initializeApp() {
-        console.log('Initializing app...');
-        // Enable the recording button immediately - let user try to use the app
-        enableRecordingButton();
-        
-        // Start dependency checking in background (non-blocking)
-        checkDependenciesInBackground();
+  // Show main interface when Get Started is clicked
+  getStartedBtn.addEventListener("click", function () {
+    landingPage.classList.remove("active");
+    mainInterface.classList.add("active");
+    // Focus on input when entering conversation
+    setTimeout(() => messageInput.focus(), 100);
+  });
+
+  // Handle send message
+  function sendMessage() {
+    const message = messageInput.value.trim();
+    if (!message || isWaitingForResponse) return;
+
+    // Add user message to chat
+    addMessageToChat(message, "user");
+
+    // Add to conversation history
+    conversationHistory.push({ role: "user", content: message });
+
+    messageInput.value = "";
+
+    // Disable input while waiting for response
+    setWaitingState(true);
+
+    // Send to Ollama with context
+    sendToOllama(message);
+  }
+
+  // Send message on button click
+  sendBtn.addEventListener("click", sendMessage);
+
+  // Send message on Enter key
+  messageInput.addEventListener("keypress", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // Add message to chat UI
+  function addMessageToChat(message, sender) {
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `message ${sender}-message`;
+
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "message-content";
+    contentDiv.textContent = message;
+
+    messageDiv.appendChild(contentDiv);
+    chatMessages.appendChild(messageDiv);
+
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Set waiting state for input
+  function setWaitingState(waiting) {
+    isWaitingForResponse = waiting;
+    sendBtn.disabled = waiting;
+    messageInput.disabled = waiting;
+
+    if (waiting) {
+      sendBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                </svg>
+            `;
+    } else {
+      sendBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+                </svg>
+            `;
+    }
+  }
+
+  // Build context prompt from conversation history
+  function buildContextPrompt(currentMessage) {
+    let contextPrompt =
+      "You are a helpful AI assistant. Here's our conversation so far:\n\n";
+
+    // Add recent conversation history (last 10 exchanges to keep context manageable)
+    const recentHistory = conversationHistory.slice(-10);
+    for (const msg of recentHistory) {
+      contextPrompt += `${msg.role === "user" ? "Human" : "Assistant"}: ${
+        msg.content
+      }\n`;
     }
 
-    // Check dependencies in background (non-blocking)
-    function checkDependenciesInBackground() {
-        // Show initial status briefly
-        statusText.textContent = 'Checking dependencies...';
-        
-        // Start background check without blocking UI
-        setTimeout(async () => {
-            try {
-                const response = await fetch('http://localhost:3001/api/dependencies/check');
-                const data = await response.json();
-                
-                if (data.success && data.allInstalled) {
-                    // All dependencies are already installed - hide everything silently
-                    dependenciesReady = true;
-                    console.log('Dependencies ready!');
-                    setTimeout(() => {
-                        dependencyStatus.classList.add('hidden');
-                        successMessage.classList.add('hidden');
-                    }, 500);
-                } else {
-                    // Some dependencies are missing, show progress
-                    statusText.textContent = 'Installing missing dependencies...';
-                    dependencyProgress.classList.remove('hidden');
-                    downloadMissingDependencies();
-                }
-            } catch (error) {
-                console.error('Error checking dependencies:', error);
-                // Hide status silently if there's an error
-                setTimeout(() => {
-                    dependencyStatus.classList.add('hidden');
-                }, 1000);
-            }
-        }, 1000);
-    }
+    contextPrompt += `\nHuman: ${currentMessage}\nAssistant:`;
+    return contextPrompt;
+  }
 
-    // Check dependencies with real backend (legacy function for compatibility)
-    async function checkDependencies() {
-        return checkDependenciesInBackground();
-    }
+  // Send message to Ollama
+  async function sendToOllama(message) {
+    try {
+      // Build context-aware prompt
+      const contextPrompt = buildContextPrompt(message);
 
-    // Download missing dependencies with real backend
-    async function downloadMissingDependencies() {
-        try {
-            // Start download process
-            const response = await fetch('http://localhost:3001/api/dependencies/download', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to start download');
-            }
-            
-            // Poll for progress updates
-            const progressInterval = setInterval(async () => {
-                try {
-                    const progressResponse = await fetch('http://localhost:3001/api/dependencies/progress');
-                    const progressData = await progressResponse.json();
-                    
-                    if (progressData.success) {
-                        const { oss, whisper } = progressData.progress;
-                        
-                        updateProgress('oss', oss.progress);
-                        updateProgress('whisper', whisper.progress);
-                        
-                        // Check if both downloads are complete
-                        if (oss.status === 'completed' && whisper.status === 'completed') {
-                            clearInterval(progressInterval);
-                            dependenciesReady = true;
-                            console.log('All dependencies installed successfully!');
-                            setTimeout(() => {
-                                dependencyProgress.classList.add('hidden');
-                                dependencyStatus.classList.add('hidden');
-                                successMessage.classList.add('hidden');
-                            }, 1000);
-                        }
-                        
-                        // Check for errors
-                        if (oss.status === 'error' || whisper.status === 'error') {
-                            clearInterval(progressInterval);
-                            statusText.textContent = 'Download failed. Please try again.';
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error fetching progress:', error);
-                }
-            }, 500);
-            
-        } catch (error) {
-            console.error('Error downloading dependencies:', error);
-            statusText.textContent = 'Download failed. Please check backend connection.';
-            // Show retry option
-            setTimeout(() => {
-                statusText.textContent = 'Click the recording button to retry.';
-            }, 2000);
-        }
-    }
+      const response = await fetch("http://localhost:11434/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-oss:20b",
+          prompt: contextPrompt,
+          stream: false,
+          options: {
+            temperature: 0.7,
+            top_p: 0.9,
+            max_tokens: 500,
+          },
+        }),
+      });
 
-    // Update progress bar
-    function updateProgress(type, value) {
-        const progress = type === 'oss' ? ossProgress : whisperProgress;
-        const percentage = type === 'oss' ? ossPercentage : whisperPercentage;
-        
-        progress.style.width = `${value}%`;
-        percentage.textContent = `${Math.round(value)}%`;
-    }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    // Enable recording button when dependencies are ready
-    function enableRecordingButton() {
-        getStartedBtn.disabled = false;
-        getStartedBtn.style.opacity = '1';
-        getStartedBtn.style.cursor = 'pointer';
-        console.log('Recording button enabled - user can try to use the app');
-    }
+      const data = await response.json();
+      const botResponse =
+        data.response || "Sorry, I could not generate a response.";
 
-    // Show main interface when Get Started is clicked
-    getStartedBtn.addEventListener('click', function() {
-        // Always allow user to proceed - dependencies will be checked in background
-        console.log('User clicked Get Started - proceeding to main interface');
-        
-        // Dependencies are ready, proceed to main interface
-        landingPage.classList.remove('active');
-        mainInterface.classList.add('active');
-        
-        // If dependencies aren't ready yet, show a helpful message
-        if (!dependenciesReady) {
-            transcriptionText.textContent = 'Dependencies are still installing in the background. You can try recording, but it may not work until installation is complete.';
-        }
+      // Add bot response to conversation history
+      conversationHistory.push({ role: "assistant", content: botResponse });
+
+      // Add bot response to chat
+      addMessageToChat(botResponse, "bot");
+    } catch (error) {
+      console.error("Error calling Ollama:", error);
+      const errorMessage =
+        "Sorry, I encountered an error. Please make sure Ollama is running and the gpt-oss:20b model is loaded.";
+      addMessageToChat(errorMessage, "bot");
+      conversationHistory.push({ role: "assistant", content: errorMessage });
+    } finally {
+      setWaitingState(false);
+      messageInput.focus();
+    }
+  }
+
+  // Handle microphone button click
+  micBtn.addEventListener("click", function () {
+    console.log("Microphone button clicked");
+    // Add your microphone functionality here
+    // For example: start/stop recording, toggle mute, etc.
+  });
+
+  // Clear conversation
+  function clearConversation() {
+    conversationHistory = [];
+    chatMessages.innerHTML = `
+            <div class="message bot-message">
+                <div class="message-content">
+                    Hello! I'm your AI assistant powered by GPT OSS 20b. How can I help you today?
+                </div>
+            </div>
+        `;
+  }
+
+  // Handle close button click
+  closeBtn.addEventListener("click", function () {
+    console.log("Close button clicked");
+    // Clear conversation and return to landing page
+    clearConversation();
+    mainInterface.classList.remove("active");
+    landingPage.classList.add("active");
+  });
+
+  // Add some interactive feedback
+  const buttons = document.querySelectorAll("button");
+  buttons.forEach((button) => {
+    button.addEventListener("mousedown", function () {
+      this.style.transform = "scale(0.95)";
     });
 
-    // Audio recording variables
-    let mediaRecorder = null;
-    let audioChunks = [];
-    let isRecording = false;
-
-    // Get transcription elements
-    const transcriptionText = document.getElementById('transcription-text');
-    const recordingStatus = document.getElementById('recording-status');
-    const processingStatus = document.getElementById('processing-status');
-
-    // Handle microphone button click
-    micBtn.addEventListener('click', async function() {
-        if (!isRecording) {
-            await startRecording();
-        } else {
-            stopRecording();
-        }
+    button.addEventListener("mouseup", function () {
+      this.style.transform = "";
     });
 
-    // Start audio recording
-    async function startRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 16000
-                } 
-            });
-            
-            mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'audio/webm;codecs=opus'
-            });
-            
-            audioChunks = [];
-            
-            mediaRecorder.ondataavailable = function(event) {
-                audioChunks.push(event.data);
-            };
-            
-            mediaRecorder.onstop = function() {
-                processRecording();
-            };
-            
-            mediaRecorder.start();
-            isRecording = true;
-            
-            // Update UI
-            transcriptionText.textContent = 'Recording... Speak now!';
-            recordingStatus.classList.remove('hidden');
-            micBtn.style.background = '#dc3545';
-            
-            console.log('Recording started');
-            
-        } catch (error) {
-            console.error('Error starting recording:', error);
-            transcriptionText.textContent = 'Error: Could not access microphone. Please check permissions.';
-        }
-    }
-
-    // Stop audio recording
-    function stopRecording() {
-        if (mediaRecorder && isRecording) {
-            mediaRecorder.stop();
-            isRecording = false;
-            
-            // Update UI
-            recordingStatus.classList.add('hidden');
-            processingStatus.classList.remove('hidden');
-            transcriptionText.textContent = 'Processing your speech...';
-            micBtn.style.background = '#f5f5f5';
-            
-            // Stop all audio tracks
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            
-            console.log('Recording stopped');
-        }
-    }
-
-    // Process the recorded audio
-    async function processRecording() {
-        try {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            
-            // Convert blob to base64
-            const reader = new FileReader();
-            reader.onload = async function() {
-                const base64Audio = reader.result.split(',')[1];
-                await transcribeAudio(base64Audio);
-            };
-            reader.readAsDataURL(audioBlob);
-            
-        } catch (error) {
-            console.error('Error processing recording:', error);
-            transcriptionText.textContent = 'Error processing audio. Please try again.';
-            processingStatus.classList.add('hidden');
-            micBtn.style.background = '#f5f5f5';
-        }
-    }
-
-    // Send audio to backend for transcription
-    async function transcribeAudio(base64Audio) {
-        try {
-            const response = await fetch('http://localhost:3001/api/transcribe', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    audioData: base64Audio,
-                    audioFormat: 'webm'
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                transcriptionText.textContent = data.transcription || 'No speech detected.';
-                console.log('Transcription:', data.transcription);
-            } else {
-                // Check if it's a dependency issue
-                if (data.error && data.error.includes('dependencies')) {
-                    transcriptionText.textContent = 'Dependencies are still installing. Please wait a moment and try again.';
-                } else {
-                    transcriptionText.textContent = 'Error: ' + data.error;
-                }
-                console.error('Transcription error:', data.error);
-            }
-            
-        } catch (error) {
-            console.error('Error sending audio for transcription:', error);
-            // Check if it's a connection issue
-            if (error.message.includes('fetch')) {
-                transcriptionText.textContent = 'Cannot connect to backend service. Please check if dependencies are installed.';
-            } else {
-                transcriptionText.textContent = 'Error connecting to transcription service.';
-            }
-        } finally {
-            processingStatus.classList.add('hidden');
-            micBtn.style.background = '#f5f5f5';
-        }
-    }
-
-    // Handle close button click
-    closeBtn.addEventListener('click', function() {
-        console.log('Close button clicked');
-        // Return to landing page and reset state
-        mainInterface.classList.remove('active');
-        landingPage.classList.add('active');
-        
-        // Don't restart dependency checking - just show current status
-        if (dependenciesReady) {
-            dependencyStatus.classList.add('hidden');
-            successMessage.classList.add('hidden');
-        } else {
-            // Show a simple status message
-            statusText.textContent = 'Dependencies are being checked in the background...';
-            dependencyProgress.classList.add('hidden');
-            successMessage.classList.add('hidden');
-        }
+    button.addEventListener("mouseleave", function () {
+      this.style.transform = "";
     });
-
-    // Add some interactive feedback
-    const buttons = document.querySelectorAll('button');
-    buttons.forEach(button => {
-        button.addEventListener('mousedown', function() {
-            this.style.transform = 'scale(0.95)';
-        });
-        
-        button.addEventListener('mouseup', function() {
-            this.style.transform = '';
-        });
-        
-        button.addEventListener('mouseleave', function() {
-            this.style.transform = '';
-        });
-    });
-
-    // Initialize the app when DOM is loaded
-    initializeApp();
+  });
 });
