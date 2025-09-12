@@ -40,40 +40,36 @@
           </div>
         </div>
 
-        <!-- Conversation Area -->
+        <!-- Conversation Interface -->
         <div class="conversation-container">
-          <div id="chat-messages" class="chat-messages">
+          <div id="conversation-messages" class="messages-container">
             <div class="message bot-message">
               <div class="message-content">
-                Hello! I'm your AI assistant powered by GPT OSS 20b. How can I
-                help you today?
+                Hello! I'm your AI assistant. How can I help you today?
               </div>
             </div>
           </div>
 
-          <!-- Input Area -->
           <div class="input-container">
-            <div class="input-wrapper">
-              <input
-                type="text"
-                id="message-input"
-                placeholder="Type your message here..."
-                maxlength="1000"
-              />
-              <button id="send-btn" class="send-btn">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="22" y1="2" x2="11" y2="13"></line>
-                  <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
-                </svg>
-              </button>
-            </div>
+            <input
+              type="text"
+              id="message-input"
+              placeholder="Type your message here..."
+              autocomplete="off"
+            />
+            <button id="send-btn" class="send-btn">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+              </svg>
+            </button>
           </div>
         </div>
 
