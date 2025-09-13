@@ -32,12 +32,8 @@ const config = {
     category: "public.app-category.productivity",
     target: [
       {
-        target: "dmg",
-        arch: ["x64", "arm64"],
-      },
-      {
-        target: "zip",
-        arch: ["x64", "arm64"],
+        target: "dir",
+        arch: ["arm64"],
       },
     ],
     icon: "app/resources/icon.icns",
@@ -47,12 +43,11 @@ const config = {
     entitlements: null,
     entitlementsInherit: null,
     notarize: false,
-    type: "distribution"
   },
   win: {
     target: [
       {
-        target: "nsis",
+        target: "dir",
         arch: ["x64"],
       },
       {
@@ -61,6 +56,8 @@ const config = {
       },
     ],
     icon: "app/resources/icon.ico",
+    requestedExecutionLevel: "asInvoker",
+    verifyUpdateCodeSignature: false,
   },
   linux: {
     target: [
