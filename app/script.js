@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   const landingPage = document.getElementById("landing-page");
+  const installationScreen = document.getElementById("installation-screen");
   const mainInterface = document.getElementById("main-interface");
   const getStartedBtn = document.getElementById("get-started-btn");
   const micBtn = document.getElementById("mic-btn");
@@ -8,16 +9,123 @@ document.addEventListener("DOMContentLoaded", function () {
   const sendBtn = document.getElementById("send-btn");
   const messagesContainer = document.getElementById("conversation-messages");
 
-  // Show main interface when Get Started is clicked
-  getStartedBtn.addEventListener("click", function () {
+  // Check if we're in Electron (packaged app)
+  const isElectron = window.require !== undefined;
+  
+  // Initialize app based on environment
+  if (isElectron) {
+    initializeElectronApp();
+  } else {
+    initializeWebApp();
+  }
+
+  // Initialize Electron app with auto-installer
+  async function initializeElectronApp() {
+    try {
+      // Show installation screen first
+      landingPage.classList.remove("active");
+      installationScreen.classList.add("active");
+      
+      // Check dependencies
+      const deps = await window.electronAPI.checkDependencies();
+      
+      if (deps.ollama && deps.whisper) {
+        // All dependencies installed, go to main interface
+        showMainInterface();
+      } else {
+        // Install missing dependencies
+        await installDependencies();
+        showMainInterface();
+      }
+    } catch (error) {
+      console.error("Failed to initialize app:", error);
+      showMainInterface(); // Fallback to main interface
+    }
+  }
+
+  // Initialize web app (development)
+  function initializeWebApp() {
+    // Web app doesn't need auto-installer
+    showLandingPage();
+  }
+
+  // Show landing page
+  function showLandingPage() {
+    landingPage.classList.add("active");
+    installationScreen.classList.remove("active");
+    mainInterface.classList.remove("active");
+  }
+
+  // Show main interface
+  function showMainInterface() {
     landingPage.classList.remove("active");
+    installationScreen.classList.remove("active");
     mainInterface.classList.add("active");
+    
     // Focus on the message input when entering the chat
     setTimeout(() => {
       messageInput.focus();
       // Check microphone permission on startup
       checkMicrophonePermission();
     }, 300);
+  }
+
+  // Install dependencies with progress tracking
+  async function installDependencies() {
+    updateStatusMessage("Installing required components...");
+    
+    // Start installation
+    const success = await window.electronAPI.installDependencies();
+    
+    if (success) {
+      updateStatusMessage("Installation completed successfully!");
+    } else {
+      updateStatusMessage("Installation failed. Please check the console for details.");
+    }
+    
+    return success;
+  }
+
+  // Update installation progress
+  function updateInstallationProgress(progress) {
+    // Update Ollama progress
+    const ollamaProgress = document.getElementById("ollama-progress");
+    const ollamaIcon = ollamaProgress.querySelector(".status-icon");
+    const ollamaPercent = ollamaProgress.querySelector(".progress-percent");
+    const ollamaFill = ollamaProgress.querySelector(".progress-fill");
+    
+    ollamaIcon.textContent = progress.ollama.status === "completed" ? "✅" : 
+                           progress.ollama.status === "installing" ? "⏳" : 
+                           progress.ollama.status === "error" ? "❌" : "⏳";
+    ollamaPercent.textContent = `${progress.ollama.progress}%`;
+    ollamaFill.style.width = `${progress.ollama.progress}%`;
+    
+    // Update Whisper progress
+    const whisperProgress = document.getElementById("whisper-progress");
+    const whisperIcon = whisperProgress.querySelector(".status-icon");
+    const whisperPercent = whisperProgress.querySelector(".progress-percent");
+    const whisperFill = whisperProgress.querySelector(".progress-fill");
+    
+    whisperIcon.textContent = progress.whisper.status === "completed" ? "✅" : 
+                             progress.whisper.status === "installing" ? "⏳" : 
+                             progress.whisper.status === "error" ? "❌" : "⏳";
+    whisperPercent.textContent = `${progress.whisper.progress}%`;
+    whisperFill.style.width = `${progress.whisper.progress}%`;
+  }
+
+  // Update status message
+  function updateStatusMessage(message) {
+    const statusElement = document.getElementById("status-message");
+    if (statusElement) {
+      statusElement.textContent = message;
+    }
+  }
+
+  // Show main interface when Get Started is clicked (for web app)
+  getStartedBtn.addEventListener("click", function () {
+    if (!isElectron) {
+      showMainInterface();
+    }
   });
 
   // Check microphone permission on startup
@@ -26,7 +134,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Try to get microphone permission
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       // Stop immediately - we just wanted to check permission
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       console.log("Microphone permission granted");
     } catch (err) {
       console.log("Microphone permission not granted yet");
@@ -52,15 +160,20 @@ document.addEventListener("DOMContentLoaded", function () {
     e.preventDefault();
     e.stopPropagation();
     console.log("Microphone button clicked");
-    
+
     // Check if we're in Electron and request permissions
     if (window.require) {
-      requestMicrophonePermission().then(() => {
-        toggleRecording();
-      }).catch(err => {
-        console.error("Permission denied:", err);
-        addMessageToChat("Microphone permission is required. Please allow microphone access in System Preferences > Security & Privacy > Microphone, then restart the app.", "bot");
-      });
+      requestMicrophonePermission()
+        .then(() => {
+          toggleRecording();
+        })
+        .catch((err) => {
+          console.error("Permission denied:", err);
+          addMessageToChat(
+            "Microphone permission is required. Please allow microphone access in System Preferences > Security & Privacy > Microphone, then restart the app.",
+            "bot"
+          );
+        });
     } else {
       toggleRecording();
     }
@@ -159,14 +272,16 @@ document.addEventListener("DOMContentLoaded", function () {
           sampleRate: 48000,
         },
       });
-      
+
       // Stop the stream immediately - we just wanted to trigger permission
-      stream.getTracks().forEach(track => track.stop());
-      
+      stream.getTracks().forEach((track) => track.stop());
+
       return Promise.resolve();
     } catch (err) {
       console.error("Microphone permission error:", err);
-      throw new Error("Microphone access denied. Please allow microphone access and try again.");
+      throw new Error(
+        "Microphone access denied. Please allow microphone access and try again."
+      );
     }
   }
 
@@ -213,7 +328,7 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch((err) => {
         console.error("Microphone access denied:", err);
-        
+
         // Check if we're in Electron (packaged app)
         if (window.require) {
           throw new Error(

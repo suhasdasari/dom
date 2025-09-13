@@ -1,7 +1,9 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
+const AutoInstaller = require("./installer");
 
 let mainWindow;
+let installer = new AutoInstaller();
 
 function createWindow() {
   // Create the browser window
@@ -9,9 +11,12 @@ function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
       webSecurity: false,
+      allowRunningInsecureContent: true,
+      experimentalFeatures: true,
+      preload: path.join(__dirname, 'preload.js')
     },
     resizable: false,
     frame: false,
@@ -26,6 +31,9 @@ function createWindow() {
   if (process.argv.includes("--dev")) {
     mainWindow.webContents.openDevTools();
   }
+
+  // Set up IPC handlers for installer
+  setupInstallerHandlers();
 }
 
 // This method will be called when Electron has finished initialization
@@ -43,3 +51,26 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+// Set up installer IPC handlers
+function setupInstallerHandlers() {
+  // Check dependencies
+  ipcMain.handle('check-dependencies', async () => {
+    return await installer.checkDependencies();
+  });
+
+  // Install dependencies
+  ipcMain.handle('install-dependencies', async () => {
+    return await installer.installAll();
+  });
+
+  // Get installation progress
+  ipcMain.handle('get-install-progress', () => {
+    return installer.getProgress();
+  });
+
+  // Check if installing
+  ipcMain.handle('is-installing', () => {
+    return installer.isInstallingInProgress();
+  });
+}

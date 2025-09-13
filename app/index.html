@@ -30,6 +30,52 @@
       </div>
     </div>
 
+    <!-- Installation Screen -->
+    <div id="installation-screen" class="page">
+      <div class="container">
+        <!-- Central Logo -->
+        <div class="logo-container">
+          <div class="logo-circle">
+            <img src="assets/logo.png" alt="Logo" class="logo-image" />
+          </div>
+        </div>
+
+        <!-- Installation Content -->
+        <div class="installation-content">
+          <h2>Setting up REMOAI Desktop</h2>
+          <p>We're installing the required AI components. This may take a few minutes...</p>
+          
+          <div class="installation-progress">
+            <div class="progress-item" id="ollama-progress">
+              <div class="progress-label">
+                <span class="status-icon">⏳</span>
+                <span class="status-text">Installing Ollama (AI Engine)</span>
+                <span class="progress-percent">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 0%"></div>
+              </div>
+            </div>
+            
+            <div class="progress-item" id="whisper-progress">
+              <div class="progress-label">
+                <span class="status-icon">⏳</span>
+                <span class="status-text">Installing Whisper (Speech Recognition)</span>
+                <span class="progress-percent">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="installation-status">
+            <p id="status-message">Checking dependencies...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Interface -->
     <div id="main-interface" class="page">
       <div class="container">
