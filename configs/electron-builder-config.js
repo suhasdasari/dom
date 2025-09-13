@@ -32,11 +32,7 @@ const config = {
     category: "public.app-category.productivity",
     target: [
       {
-        target: "dmg",
-        arch: ["x64", "arm64"],
-      },
-      {
-        target: "zip",
+        target: "dir",
         arch: ["x64", "arm64"],
       },
     ],
