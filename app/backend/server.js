@@ -422,21 +422,23 @@ app.post("/api/dependencies/install/:dependency", async (req, res) => {
     console.log(`📥 Installing ${dependency}...`);
 
     let result = false;
-    
-    if (dependency === 'ollama') {
+
+    if (dependency === "ollama") {
       result = await installOllama();
-    } else if (dependency === 'whisper') {
+    } else if (dependency === "whisper") {
       result = await installWhisper();
     } else {
       return res.status(400).json({
         success: false,
-        error: "Invalid dependency name"
+        error: "Invalid dependency name",
       });
     }
 
     res.json({
       success: result,
-      message: result ? `${dependency} installed successfully` : `Failed to install ${dependency}`,
+      message: result
+        ? `${dependency} installed successfully`
+        : `Failed to install ${dependency}`,
     });
   } catch (error) {
     console.error(`${req.params.dependency} installation failed:`, error);
@@ -497,8 +499,17 @@ async function installOllama() {
 
 async function installWhisper() {
   try {
-    await execAsync("pip3 install openai-whisper");
-    return true;
+    // Try different installation methods for different environments
+    try {
+      // First try with --break-system-packages flag
+      await execAsync("pip3 install openai-whisper --break-system-packages");
+      return true;
+    } catch (error) {
+      console.log("Trying with --user flag...");
+      // Fallback to --user flag
+      await execAsync("pip3 install openai-whisper --user");
+      return true;
+    }
   } catch (error) {
     console.error("Whisper installation failed:", error);
     return false;

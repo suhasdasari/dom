@@ -116,29 +116,37 @@ document.addEventListener("DOMContentLoaded", function () {
       mainInterface.classList.remove("active");
 
       // Check dependencies
-      const response = await fetch("http://localhost:3001/api/dependencies/check");
+      const response = await fetch(
+        "http://localhost:3001/api/dependencies/check"
+      );
       const result = await response.json();
-      
+
       if (result.success) {
         const ollamaInstalled = result.dependencies.ollama.installed;
         const whisperInstalled = result.dependencies.whisper.installed;
-        
+
         // Update status display
         updateDependencyStatus("ollama", ollamaInstalled);
         updateDependencyStatus("whisper", whisperInstalled);
-        
+
         if (ollamaInstalled && whisperInstalled) {
-          updateStatusMessage("All dependencies are installed. Starting app...");
+          updateStatusMessage(
+            "All dependencies are installed. Starting app..."
+          );
           setTimeout(() => showMainInterface(), 1000);
         } else {
-          updateStatusMessage("Some dependencies are missing. Click the download buttons below to install them.");
+          updateStatusMessage(
+            "Some dependencies are missing. Click the download buttons below to install them."
+          );
         }
       } else {
         updateStatusMessage("Failed to check dependencies. Please try again.");
       }
     } catch (error) {
       console.error("Failed to check dependencies:", error);
-      updateStatusMessage("Failed to check dependencies. Please ensure the backend server is running.");
+      updateStatusMessage(
+        "Failed to check dependencies. Please ensure the backend server is running."
+      );
     }
   }
 
@@ -146,24 +154,32 @@ document.addEventListener("DOMContentLoaded", function () {
   function updateDependencyStatus(dependency, installed) {
     const progressItem = document.getElementById(`${dependency}-progress`);
     if (progressItem) {
-      const statusIcon = progressItem.querySelector('.status-icon');
-      const statusText = progressItem.querySelector('.status-text');
-      const progressFill = progressItem.querySelector('.progress-fill');
-      const progressPercent = progressItem.querySelector('.progress-percent');
-      
+      const statusIcon = progressItem.querySelector(".status-icon");
+      const statusText = progressItem.querySelector(".status-text");
+      const progressFill = progressItem.querySelector(".progress-fill");
+      const progressPercent = progressItem.querySelector(".progress-percent");
+
       if (installed) {
         statusIcon.textContent = "✅";
-        statusText.textContent = `${dependency === 'ollama' ? 'Ollama (AI Engine)' : 'Whisper (Speech Recognition)'} - Installed`;
+        statusText.textContent = `${
+          dependency === "ollama"
+            ? "Ollama (AI Engine)"
+            : "Whisper (Speech Recognition)"
+        } - Installed`;
         progressFill.style.width = "100%";
         progressPercent.textContent = "100%";
-        progressItem.classList.add('installed');
+        progressItem.classList.add("installed");
       } else {
         statusIcon.textContent = "❌";
-        statusText.textContent = `${dependency === 'ollama' ? 'Ollama (AI Engine)' : 'Whisper (Speech Recognition)'} - Not Installed`;
+        statusText.textContent = `${
+          dependency === "ollama"
+            ? "Ollama (AI Engine)"
+            : "Whisper (Speech Recognition)"
+        } - Not Installed`;
         progressFill.style.width = "0%";
         progressPercent.textContent = "0%";
-        progressItem.classList.remove('installed');
-        
+        progressItem.classList.remove("installed");
+
         // Add download button
         addDownloadButton(progressItem, dependency);
       }
@@ -173,62 +189,73 @@ document.addEventListener("DOMContentLoaded", function () {
   // Add download button to dependency item
   function addDownloadButton(progressItem, dependency) {
     // Remove existing download button if any
-    const existingBtn = progressItem.querySelector('.download-btn');
+    const existingBtn = progressItem.querySelector(".download-btn");
     if (existingBtn) {
       existingBtn.remove();
     }
-    
+
     // Create download button
-    const downloadBtn = document.createElement('button');
-    downloadBtn.className = 'download-btn';
-    downloadBtn.textContent = 'Download';
+    const downloadBtn = document.createElement("button");
+    downloadBtn.className = "download-btn";
+    downloadBtn.textContent = "Download";
     downloadBtn.onclick = () => downloadDependency(dependency);
-    
+
     // Add button to progress item
-    const progressLabel = progressItem.querySelector('.progress-label');
+    const progressLabel = progressItem.querySelector(".progress-label");
     progressLabel.appendChild(downloadBtn);
   }
 
   // Download specific dependency
   async function downloadDependency(dependency) {
     const progressItem = document.getElementById(`${dependency}-progress`);
-    const downloadBtn = progressItem.querySelector('.download-btn');
-    const statusIcon = progressItem.querySelector('.status-icon');
-    const progressFill = progressItem.querySelector('.progress-fill');
-    const progressPercent = progressItem.querySelector('.progress-percent');
-    
+    const downloadBtn = progressItem.querySelector(".download-btn");
+    const statusIcon = progressItem.querySelector(".status-icon");
+    const progressFill = progressItem.querySelector(".progress-fill");
+    const progressPercent = progressItem.querySelector(".progress-percent");
+
     // Update UI to show downloading
     downloadBtn.disabled = true;
-    downloadBtn.textContent = 'Downloading...';
+    downloadBtn.textContent = "Downloading...";
     statusIcon.textContent = "⏳";
-    
+
     try {
       // Start installation for specific dependency
-      const response = await fetch(`http://localhost:3001/api/dependencies/install/${dependency}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
-      
+      const response = await fetch(
+        `http://localhost:3001/api/dependencies/install/${dependency}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
       if (response.ok) {
         const result = await response.json();
-        
+
         if (result.success) {
           // Installation successful
           statusIcon.textContent = "✅";
-          downloadBtn.textContent = 'Installed';
+          downloadBtn.textContent = "Installed";
           downloadBtn.disabled = true;
           progressFill.style.width = "100%";
           progressPercent.textContent = "100%";
-          progressItem.classList.add('installed');
-          
-          updateStatusMessage(`${dependency === 'ollama' ? 'Ollama' : 'Whisper'} installed successfully!`);
-          
+          progressItem.classList.add("installed");
+
+          updateStatusMessage(
+            `${
+              dependency === "ollama" ? "Ollama" : "Whisper"
+            } installed successfully!`
+          );
+
           // Check if all dependencies are now installed
           setTimeout(async () => {
-            const checkResponse = await fetch("http://localhost:3001/api/dependencies/check");
+            const checkResponse = await fetch(
+              "http://localhost:3001/api/dependencies/check"
+            );
             const checkResult = await checkResponse.json();
             if (checkResult.success && checkResult.allInstalled) {
-              updateStatusMessage("All dependencies are installed. Starting app...");
+              updateStatusMessage(
+                "All dependencies are installed. Starting app..."
+              );
               setTimeout(() => showMainInterface(), 2000);
             }
           }, 1000);
@@ -242,7 +269,7 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch (error) {
       console.error(`${dependency} installation failed:`, error);
       statusIcon.textContent = "❌";
-      downloadBtn.textContent = 'Retry';
+      downloadBtn.textContent = "Retry";
       downloadBtn.disabled = false;
       updateStatusMessage(`Failed to install ${dependency}: ${error.message}`);
     }
