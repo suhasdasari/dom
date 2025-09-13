@@ -15,8 +15,24 @@ document.addEventListener("DOMContentLoaded", function () {
     // Focus on the message input when entering the chat
     setTimeout(() => {
       messageInput.focus();
+      // Check microphone permission on startup
+      checkMicrophonePermission();
     }, 300);
   });
+
+  // Check microphone permission on startup
+  async function checkMicrophonePermission() {
+    try {
+      // Try to get microphone permission
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Stop immediately - we just wanted to check permission
+      stream.getTracks().forEach(track => track.stop());
+      console.log("Microphone permission granted");
+    } catch (err) {
+      console.log("Microphone permission not granted yet");
+      // Don't show error on startup, just log it
+    }
+  }
 
   // Handle send button click
   sendBtn.addEventListener("click", function () {
@@ -32,9 +48,22 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Handle microphone button click
-  micBtn.addEventListener("click", function () {
+  micBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
     console.log("Microphone button clicked");
-    toggleRecording();
+    
+    // Check if we're in Electron and request permissions
+    if (window.require) {
+      requestMicrophonePermission().then(() => {
+        toggleRecording();
+      }).catch(err => {
+        console.error("Permission denied:", err);
+        addMessageToChat("Microphone permission is required. Please allow microphone access in System Preferences > Security & Privacy > Microphone, then restart the app.", "bot");
+      });
+    } else {
+      toggleRecording();
+    }
   });
 
   // Handle close button click
@@ -118,17 +147,48 @@ document.addEventListener("DOMContentLoaded", function () {
   let recordedChunks = [];
   let isRecording = false;
 
+  // Request microphone permission for Electron
+  async function requestMicrophonePermission() {
+    try {
+      // First try to get media stream to trigger permission request
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          channelCount: 1,
+          sampleRate: 48000,
+        },
+      });
+      
+      // Stop the stream immediately - we just wanted to trigger permission
+      stream.getTracks().forEach(track => track.stop());
+      
+      return Promise.resolve();
+    } catch (err) {
+      console.error("Microphone permission error:", err);
+      throw new Error("Microphone access denied. Please allow microphone access and try again.");
+    }
+  }
+
   async function toggleRecording() {
+    // Prevent multiple rapid clicks
+    if (micBtn.disabled) return;
+
     try {
       if (!isRecording) {
+        micBtn.disabled = true;
         await startRecording();
+        micBtn.disabled = false;
       } else {
+        micBtn.disabled = true;
         await stopRecording();
+        micBtn.disabled = false;
       }
     } catch (err) {
       console.error("Recording error:", err);
       setMicVisualState(false);
       isRecording = false;
+      micBtn.disabled = false;
     }
   }
 
@@ -142,14 +202,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function startRecording() {
     // Request mic with reasonable constraints
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        channelCount: 1,
-        sampleRate: 48000,
-      },
-    });
+    const stream = await navigator.mediaDevices
+      .getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          channelCount: 1,
+          sampleRate: 48000,
+        },
+      })
+      .catch((err) => {
+        console.error("Microphone access denied:", err);
+        
+        // Check if we're in Electron (packaged app)
+        if (window.require) {
+          throw new Error(
+            "Microphone access denied. Please:\n1. Go to System Preferences > Security & Privacy > Microphone\n2. Check the box next to REMOAI Desktop\n3. Restart the app and try again."
+          );
+        } else {
+          throw new Error(
+            "Microphone access is required. Please allow microphone access and try again."
+          );
+        }
+      });
 
     recordedChunks = [];
 
@@ -173,6 +248,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const blob = new Blob(recordedChunks, {
           type: mimeType || "audio/webm",
         });
+
+        // Check if we have any audio data
+        if (blob.size === 0) {
+          throw new Error("No audio recorded. Please try speaking louder.");
+        }
+
         const base64Audio = await blobToBase64(blob);
 
         // Send to backend Whisper endpoint
@@ -207,6 +288,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (text) {
           messageInput.value = text;
           await sendMessage();
+        } else {
+          addMessageToChat(
+            "I didn't catch that. Please try speaking more clearly.",
+            "bot"
+          );
         }
       } catch (err) {
         console.error("Transcription error:", err);
@@ -221,6 +307,8 @@ document.addEventListener("DOMContentLoaded", function () {
             mediaRecorder.stream &&
             mediaRecorder.stream.getTracks().forEach((t) => t.stop());
         } catch (_) {}
+        isRecording = false;
+        setMicVisualState(false);
       }
     };
 
