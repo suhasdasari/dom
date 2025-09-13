@@ -142,7 +142,6 @@ async function installWhisper() {
 
 // API Routes
 
-
 // Download missing dependencies
 app.post("/api/dependencies/download", async (req, res) => {
   try {
@@ -345,29 +344,29 @@ app.get("/api/health", (req, res) => {
 app.get("/api/dependencies/check", async (req, res) => {
   try {
     console.log("🔍 Checking dependencies...");
-    
+
     const ollamaInstalled = await checkOllama();
     const whisperInstalled = await checkWhisper();
-    
+
     res.json({
       success: true,
       dependencies: {
         ollama: {
           name: "Ollama (AI Engine)",
-          installed: ollamaInstalled
+          installed: ollamaInstalled,
         },
         whisper: {
-          name: "Whisper (Speech Recognition)", 
-          installed: whisperInstalled
-        }
+          name: "Whisper (Speech Recognition)",
+          installed: whisperInstalled,
+        },
       },
-      allInstalled: ollamaInstalled && whisperInstalled
+      allInstalled: ollamaInstalled && whisperInstalled,
     });
   } catch (error) {
     console.error("Dependency check failed:", error);
     res.status(500).json({
       success: false,
-      error: "Failed to check dependencies"
+      error: "Failed to check dependencies",
     });
   }
 });
@@ -376,16 +375,16 @@ app.get("/api/dependencies/check", async (req, res) => {
 app.post("/api/dependencies/install", async (req, res) => {
   try {
     console.log("📥 Installing dependencies...");
-    
+
     const results = {
       ollama: false,
-      whisper: false
+      whisper: false,
     };
-    
+
     // Check what needs to be installed
     const ollamaInstalled = await checkOllama();
     const whisperInstalled = await checkWhisper();
-    
+
     // Install Ollama if missing
     if (!ollamaInstalled) {
       console.log("Installing Ollama...");
@@ -393,7 +392,7 @@ app.post("/api/dependencies/install", async (req, res) => {
     } else {
       results.ollama = true;
     }
-    
+
     // Install Whisper if missing
     if (!whisperInstalled) {
       console.log("Installing Whisper...");
@@ -401,17 +400,17 @@ app.post("/api/dependencies/install", async (req, res) => {
     } else {
       results.whisper = true;
     }
-    
+
     res.json({
       success: true,
       results: results,
-      message: "Dependencies installation completed"
+      message: "Dependencies installation completed",
     });
   } catch (error) {
     console.error("Dependency installation failed:", error);
     res.status(500).json({
       success: false,
-      error: "Failed to install dependencies"
+      error: "Failed to install dependencies",
     });
   }
 });
@@ -438,7 +437,7 @@ async function checkWhisper() {
 async function installOllama() {
   try {
     const platform = process.platform;
-    
+
     if (platform === "darwin") {
       // macOS - install via Homebrew
       await execAsync("brew install ollama");
@@ -456,7 +455,7 @@ async function installOllama() {
       await execAsync(`"${installerPath}" /S`);
       await execAsync("ollama serve &");
     }
-    
+
     return true;
   } catch (error) {
     console.error("Ollama installation failed:", error);
