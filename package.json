@@ -1,0 +1,23 @@
+{
+  "name": "remoa-desktop-root",
+  "version": "1.0.0",
+  "description": "Root package for REMOA Desktop App",
+  "scripts": {
+    "install": "npm install --prefix app && npm install --prefix app/backend",
+    "start": "npm start --prefix app",
+    "dev": "npm run dev --prefix app",
+    "build": "npm run build --prefix app",
+    "build-mac": "npm run build-mac --prefix app",
+    "build-win": "npm run build-win --prefix app",
+    "build-linux": "npm run build-linux --prefix app",
+    "dist": "npm run dist --prefix app",
+    "package": "npm run package --prefix app"
+  },
+  "keywords": [
+    "desktop",
+    "electron",
+    "app"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
