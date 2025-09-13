@@ -16,7 +16,7 @@ function createWindow() {
       webSecurity: false,
       allowRunningInsecureContent: true,
       experimentalFeatures: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, "preload.js"),
     },
     resizable: false,
     frame: false,
@@ -55,22 +55,22 @@ app.on("activate", () => {
 // Set up installer IPC handlers
 function setupInstallerHandlers() {
   // Check dependencies
-  ipcMain.handle('check-dependencies', async () => {
+  ipcMain.handle("check-dependencies", async () => {
     return await installer.checkDependencies();
   });
 
   // Install dependencies
-  ipcMain.handle('install-dependencies', async () => {
+  ipcMain.handle("install-dependencies", async () => {
     return await installer.installAll();
   });
 
   // Get installation progress
-  ipcMain.handle('get-install-progress', () => {
+  ipcMain.handle("get-install-progress", () => {
     return installer.getProgress();
   });
 
   // Check if installing
-  ipcMain.handle('is-installing', () => {
+  ipcMain.handle("is-installing", () => {
     return installer.isInstallingInProgress();
   });
 }

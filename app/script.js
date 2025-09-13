@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Check if we're in Electron (packaged app)
   const isElectron = window.require !== undefined;
-  
+
   // Initialize app based on environment
   if (isElectron) {
     initializeElectronApp();
@@ -25,10 +25,10 @@ document.addEventListener("DOMContentLoaded", function () {
       // Show installation screen first
       landingPage.classList.remove("active");
       installationScreen.classList.add("active");
-      
+
       // Check dependencies
       const deps = await window.electronAPI.checkDependencies();
-      
+
       if (deps.ollama && deps.whisper) {
         // All dependencies installed, go to main interface
         showMainInterface();
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
     landingPage.classList.remove("active");
     installationScreen.classList.remove("active");
     mainInterface.classList.add("active");
-    
+
     // Focus on the message input when entering the chat
     setTimeout(() => {
       messageInput.focus();
@@ -73,16 +73,18 @@ document.addEventListener("DOMContentLoaded", function () {
   // Install dependencies with progress tracking
   async function installDependencies() {
     updateStatusMessage("Installing required components...");
-    
+
     // Start installation
     const success = await window.electronAPI.installDependencies();
-    
+
     if (success) {
       updateStatusMessage("Installation completed successfully!");
     } else {
-      updateStatusMessage("Installation failed. Please check the console for details.");
+      updateStatusMessage(
+        "Installation failed. Please check the console for details."
+      );
     }
-    
+
     return success;
   }
 
@@ -93,22 +95,32 @@ document.addEventListener("DOMContentLoaded", function () {
     const ollamaIcon = ollamaProgress.querySelector(".status-icon");
     const ollamaPercent = ollamaProgress.querySelector(".progress-percent");
     const ollamaFill = ollamaProgress.querySelector(".progress-fill");
-    
-    ollamaIcon.textContent = progress.ollama.status === "completed" ? "✅" : 
-                           progress.ollama.status === "installing" ? "⏳" : 
-                           progress.ollama.status === "error" ? "❌" : "⏳";
+
+    ollamaIcon.textContent =
+      progress.ollama.status === "completed"
+        ? "✅"
+        : progress.ollama.status === "installing"
+        ? "⏳"
+        : progress.ollama.status === "error"
+        ? "❌"
+        : "⏳";
     ollamaPercent.textContent = `${progress.ollama.progress}%`;
     ollamaFill.style.width = `${progress.ollama.progress}%`;
-    
+
     // Update Whisper progress
     const whisperProgress = document.getElementById("whisper-progress");
     const whisperIcon = whisperProgress.querySelector(".status-icon");
     const whisperPercent = whisperProgress.querySelector(".progress-percent");
     const whisperFill = whisperProgress.querySelector(".progress-fill");
-    
-    whisperIcon.textContent = progress.whisper.status === "completed" ? "✅" : 
-                             progress.whisper.status === "installing" ? "⏳" : 
-                             progress.whisper.status === "error" ? "❌" : "⏳";
+
+    whisperIcon.textContent =
+      progress.whisper.status === "completed"
+        ? "✅"
+        : progress.whisper.status === "installing"
+        ? "⏳"
+        : progress.whisper.status === "error"
+        ? "❌"
+        : "⏳";
     whisperPercent.textContent = `${progress.whisper.progress}%`;
     whisperFill.style.width = `${progress.whisper.progress}%`;
   }

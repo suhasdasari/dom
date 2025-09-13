@@ -1,10 +1,10 @@
 // Post-build script for Electron app
 // This runs after the Electron app is built
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-console.log('🔧 Running post-build steps...');
+console.log("🔧 Running post-build steps...");
 
 // Create a simple launcher for the built app
 const launcherScript = `#!/bin/bash
@@ -28,12 +28,12 @@ exec "$0" "$@"
 `;
 
 // Write launcher script
-const outputDir = process.argv[2] || 'dist-electron';
-const launcherPath = path.join(outputDir, 'start-remoa.sh');
+const outputDir = process.argv[2] || "dist-electron";
+const launcherPath = path.join(outputDir, "start-remoa.sh");
 
 fs.writeFileSync(launcherPath, launcherScript);
-fs.chmodSync(launcherPath, '755');
+fs.chmodSync(launcherPath, "755");
 
-console.log('✅ Post-build steps completed');
+console.log("✅ Post-build steps completed");
 console.log(`📁 Output directory: ${outputDir}`);
-console.log('🚀 Users can now run: ./start-remoa.sh');
+console.log("🚀 Users can now run: ./start-remoa.sh");

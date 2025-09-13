@@ -43,6 +43,11 @@ const config = {
     icon: "app/resources/icon.icns",
     hardenedRuntime: false,
     gatekeeperAssess: false,
+    identity: null,
+    entitlements: null,
+    entitlementsInherit: null,
+    notarize: false,
+    type: "distribution"
   },
   win: {
     target: [

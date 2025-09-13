@@ -283,10 +283,18 @@ body {
 }
 
 /* Status icons */
-.status-icon.completed { color: #28a745; }
-.status-icon.installing { color: #007aff; }
-.status-icon.error { color: #dc3545; }
-.status-icon.pending { color: #6c757d; }
+.status-icon.completed {
+  color: #28a745;
+}
+.status-icon.installing {
+  color: #007aff;
+}
+.status-icon.error {
+  color: #dc3545;
+}
+.status-icon.pending {
+  color: #6c757d;
+}
 
 /* Main Interface Styles */
 #main-interface .container {

@@ -5,13 +5,14 @@ A voice-enabled AI personal assistant desktop app powered by Ollama and Whisper.
 ## Features
 
 - 🎤 **Voice Input**: Click to record and transcribe speech using OpenAI Whisper
-- 💬 **Text Chat**: Type messages directly in the chat interface  
+- 💬 **Text Chat**: Type messages directly in the chat interface
 - 🤖 **Remo AI Assistant**: Get help with tasks, reminders, planning, and everyday requests
 - ⚡ **Real-time Processing**: Powered by Ollama for fast AI responses
 
 ## Quick Start
 
 ### Option 1: Automated Setup (Recommended)
+
 ```bash
 # Clone the repository
 git clone https://github.com/suhasdasari/dom.git
@@ -22,16 +23,19 @@ cd dom
 ```
 
 ### Option 2: Manual Setup
+
 See [SETUP.md](SETUP.md) for detailed installation instructions.
 
 ## Usage
 
 1. **Start Ollama:**
+
    ```bash
    ollama serve
    ```
 
 2. **Start the backend:**
+
    ```bash
    cd backend
    npm start
@@ -46,7 +50,7 @@ See [SETUP.md](SETUP.md) for detailed installation instructions.
 ## System Requirements
 
 - **macOS**: 10.15+ (Intel/Apple Silicon)
-- **Windows**: 10+ (64-bit) 
+- **Windows**: 10+ (64-bit)
 - **Linux**: Ubuntu 18.04+ or equivalent
 - **RAM**: 8GB+ recommended
 - **Storage**: 5GB+ free space
