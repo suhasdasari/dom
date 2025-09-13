@@ -58,7 +58,8 @@ document.addEventListener("DOMContentLoaded", function () {
       if (
         result.success &&
         result.dependencies.ollama.installed &&
-        result.dependencies.whisper.installed
+        result.dependencies.whisper.installed &&
+        result.dependencies.espeak.installed
       ) {
         // All dependencies installed, go to main interface
         updateStatusMessage("All dependencies are installed. Starting app...");
@@ -70,8 +71,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const whisperStatus = result.dependencies.whisper.installed
           ? "✅"
           : "❌";
+        const espeakStatus = result.dependencies.espeak.installed ? "✅" : "❌";
         updateStatusMessage(
-          `${ollamaStatus} Ollama ${whisperStatus} Whisper - Installing missing components...`
+          `${ollamaStatus} Ollama ${whisperStatus} Whisper ${espeakStatus} eSpeak - Installing missing components...`
         );
 
         await installDependenciesWeb();
@@ -156,12 +158,14 @@ document.addEventListener("DOMContentLoaded", function () {
       if (result.success) {
         const ollamaInstalled = result.dependencies.ollama.installed;
         const whisperInstalled = result.dependencies.whisper.installed;
+        const espeakInstalled = result.dependencies.espeak.installed;
 
         // Update status display
         updateDependencyStatus("ollama", ollamaInstalled);
         updateDependencyStatus("whisper", whisperInstalled);
+        updateDependencyStatus("espeak", espeakInstalled);
 
-        if (ollamaInstalled && whisperInstalled) {
+        if (ollamaInstalled && whisperInstalled && espeakInstalled) {
           updateStatusMessage(
             "All dependencies are installed. Starting app..."
           );
@@ -196,7 +200,9 @@ document.addEventListener("DOMContentLoaded", function () {
         statusText.textContent = `${
           dependency === "ollama"
             ? "Ollama (AI Engine)"
-            : "Whisper (Speech Recognition)"
+            : dependency === "whisper"
+            ? "Whisper (Speech Recognition)"
+            : "eSpeak (Text-to-Speech)"
         } - Installed`;
         progressFill.style.width = "100%";
         progressPercent.textContent = "100%";
@@ -206,7 +212,9 @@ document.addEventListener("DOMContentLoaded", function () {
         statusText.textContent = `${
           dependency === "ollama"
             ? "Ollama (AI Engine)"
-            : "Whisper (Speech Recognition)"
+            : dependency === "whisper"
+            ? "Whisper (Speech Recognition)"
+            : "eSpeak (Text-to-Speech)"
         } - Not Installed`;
         progressFill.style.width = "0%";
         progressPercent.textContent = "0%";
@@ -519,6 +527,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // Handle close button click
   closeBtn.addEventListener("click", function () {
     console.log("Close button clicked");
+    // Stop any current TTS
+    stopTTS();
     // Return to landing page
     mainInterface.classList.remove("active");
     landingPage.classList.add("active");
@@ -537,6 +547,13 @@ document.addEventListener("DOMContentLoaded", function () {
     .addEventListener("click", async function () {
       console.log("Download Ollama clicked");
       await downloadDependency("ollama");
+    });
+
+  document
+    .getElementById("download-espeak-btn")
+    .addEventListener("click", async function () {
+      console.log("Download eSpeak clicked");
+      await downloadDependency("espeak");
     });
 
   // Function to send message
@@ -605,6 +622,78 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Scroll to bottom
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    // If it's a bot message, trigger text-to-speech
+    if (sender === "bot") {
+      // Stop any current TTS before starting new one
+      stopTTS();
+      // Small delay to ensure previous TTS is stopped
+      setTimeout(() => {
+        speakText(message);
+      }, 100);
+    }
+  }
+
+  // Function to speak text using TTS
+  async function speakText(text) {
+    try {
+      console.log("Speaking text:", text.substring(0, 50) + "...");
+
+      const response = await fetch("http://localhost:3001/api/tts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: text,
+          voice: "en", // English voice
+          speed: 175, // Words per minute
+          pitch: 50, // Pitch (0-100)
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`TTS request failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        console.log("Text-to-speech started successfully");
+      } else {
+        console.error("TTS error:", result.error);
+      }
+    } catch (error) {
+      console.error("Failed to speak text:", error);
+      // Don't show error to user, just log it
+    }
+  }
+
+  // Function to stop TTS
+  async function stopTTS() {
+    try {
+      console.log("Stopping TTS...");
+
+      const response = await fetch("http://localhost:3001/api/tts/stop", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Stop TTS request failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        console.log("TTS stopped successfully");
+      } else {
+        console.error("Stop TTS error:", result.error);
+      }
+    } catch (error) {
+      console.error("Failed to stop TTS:", error);
+      // Don't show error to user, just log it
+    }
   }
 
   // Voice recording and transcription
@@ -819,5 +908,17 @@ document.addEventListener("DOMContentLoaded", function () {
     button.addEventListener("mouseleave", function () {
       this.style.transform = "";
     });
+  });
+
+  // Cleanup TTS when page is unloaded
+  window.addEventListener("beforeunload", function () {
+    stopTTS();
+  });
+
+  // Cleanup TTS when page is hidden (for mobile/Electron)
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      stopTTS();
+    }
   });
 });

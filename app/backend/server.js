@@ -19,6 +19,22 @@ const downloadProgress = {
   whisper: { progress: 0, status: "pending" },
 };
 
+// Store for tracking TTS processes
+let currentTTSProcess = null;
+
+// Function to stop current TTS process
+function stopCurrentTTS() {
+  if (currentTTSProcess) {
+    try {
+      console.log("Stopping current TTS process...");
+      currentTTSProcess.kill("SIGTERM");
+      currentTTSProcess = null;
+    } catch (error) {
+      console.error("Error stopping TTS process:", error);
+    }
+  }
+}
+
 // Check if a dependency is installed
 async function checkDependency(dependencyName) {
   try {
@@ -192,6 +208,81 @@ app.get("/api/dependencies/progress", (req, res) => {
   });
 });
 
+// Text-to-speech endpoint
+app.post("/api/tts", async (req, res) => {
+  try {
+    const { text, voice = "en", speed = 175, pitch = 50 } = req.body;
+
+    if (!text) {
+      return res.status(400).json({
+        success: false,
+        error: "No text provided for speech synthesis",
+      });
+    }
+
+    console.log("Received TTS request:", text.substring(0, 50) + "...");
+
+    // Stop any current TTS process
+    stopCurrentTTS();
+
+    // Use spawn to run espeak so we can track the process
+    const { spawn } = require("child_process");
+
+    const espeakArgs = [
+      "-v",
+      voice,
+      "-s",
+      speed.toString(),
+      "-p",
+      pitch.toString(),
+      text,
+    ];
+
+    console.log("Running espeak with args:", espeakArgs);
+
+    currentTTSProcess = spawn("espeak", espeakArgs);
+
+    currentTTSProcess.on("error", (error) => {
+      console.error("eSpeak process error:", error);
+      currentTTSProcess = null;
+    });
+
+    currentTTSProcess.on("exit", (code) => {
+      console.log("TTS process exited with code:", code);
+      currentTTSProcess = null;
+    });
+
+    // Send response immediately - don't wait for TTS to complete
+    res.json({
+      success: true,
+      message: "Text-to-speech started successfully",
+    });
+  } catch (error) {
+    console.error("TTS error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Stop TTS endpoint
+app.post("/api/tts/stop", (req, res) => {
+  try {
+    stopCurrentTTS();
+    res.json({
+      success: true,
+      message: "TTS stopped successfully",
+    });
+  } catch (error) {
+    console.error("Error stopping TTS:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 // Whisper transcription endpoint
 app.post("/api/transcribe", async (req, res) => {
   try {
@@ -347,6 +438,7 @@ app.get("/api/dependencies/check", async (req, res) => {
 
     const ollamaInstalled = await checkOllama();
     const whisperInstalled = await checkWhisper();
+    const espeakInstalled = await checkEspeak();
 
     res.json({
       success: true,
@@ -359,8 +451,12 @@ app.get("/api/dependencies/check", async (req, res) => {
           name: "Whisper (Speech Recognition)",
           installed: whisperInstalled,
         },
+        espeak: {
+          name: "eSpeak (Text-to-Speech)",
+          installed: espeakInstalled,
+        },
       },
-      allInstalled: ollamaInstalled && whisperInstalled,
+      allInstalled: ollamaInstalled && whisperInstalled && espeakInstalled,
     });
   } catch (error) {
     console.error("Dependency check failed:", error);
@@ -379,11 +475,13 @@ app.post("/api/dependencies/install", async (req, res) => {
     const results = {
       ollama: false,
       whisper: false,
+      espeak: false,
     };
 
     // Check what needs to be installed
     const ollamaInstalled = await checkOllama();
     const whisperInstalled = await checkWhisper();
+    const espeakInstalled = await checkEspeak();
 
     // Install Ollama if missing
     if (!ollamaInstalled) {
@@ -399,6 +497,14 @@ app.post("/api/dependencies/install", async (req, res) => {
       results.whisper = await installWhisper();
     } else {
       results.whisper = true;
+    }
+
+    // Install eSpeak if missing
+    if (!espeakInstalled) {
+      console.log("Installing eSpeak...");
+      results.espeak = await installEspeak();
+    } else {
+      results.espeak = true;
     }
 
     res.json({
@@ -427,6 +533,8 @@ app.post("/api/dependencies/install/:dependency", async (req, res) => {
       result = await installOllama();
     } else if (dependency === "whisper") {
       result = await installWhisper();
+    } else if (dependency === "espeak") {
+      result = await installEspeak();
     } else {
       return res.status(400).json({
         success: false,
@@ -462,6 +570,15 @@ async function checkOllama() {
 async function checkWhisper() {
   try {
     await execAsync('python3 -c "import whisper"');
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function checkEspeak() {
+  try {
+    await execAsync("espeak --version");
     return true;
   } catch (error) {
     return false;
@@ -516,6 +633,53 @@ async function installWhisper() {
   }
 }
 
+async function installEspeak() {
+  try {
+    const platform = process.platform;
+
+    if (platform === "darwin") {
+      // macOS - install via Homebrew
+      await execAsync("brew install espeak");
+    } else if (platform === "linux") {
+      // Linux - install via package manager
+      try {
+        await execAsync(
+          "sudo apt-get update && sudo apt-get install -y espeak"
+        );
+      } catch (error) {
+        // Try with yum if apt-get fails
+        await execAsync("sudo yum install -y espeak");
+      }
+    } else if (platform === "win32") {
+      // Windows - download and install
+      await execAsync("choco install espeak");
+    }
+
+    return true;
+  } catch (error) {
+    console.error("eSpeak installation failed:", error);
+    return false;
+  }
+}
+
+// Cleanup handlers
+process.on("SIGINT", () => {
+  console.log("\nReceived SIGINT, cleaning up...");
+  stopCurrentTTS();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  console.log("\nReceived SIGTERM, cleaning up...");
+  stopCurrentTTS();
+  process.exit(0);
+});
+
+process.on("exit", () => {
+  console.log("Process exiting, cleaning up...");
+  stopCurrentTTS();
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
@@ -524,4 +688,7 @@ app.listen(PORT, () => {
   console.log("  GET  /api/dependencies/check - Check dependencies");
   console.log("  POST /api/dependencies/download - Download dependencies");
   console.log("  GET  /api/dependencies/progress - Get download progress");
+  console.log("  POST /api/transcribe - Speech-to-text transcription");
+  console.log("  POST /api/tts - Text-to-speech synthesis");
+  console.log("  POST /api/tts/stop - Stop current TTS");
 });
