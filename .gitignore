@@ -94,6 +94,7 @@ logs
 
 # Electron specific
 dist/
+dist-electron/
 out/
 release/
 
