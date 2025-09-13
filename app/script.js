@@ -367,8 +367,9 @@ document.addEventListener("DOMContentLoaded", function () {
         statusMessage.textContent = `Failed to install ${dependency}. Please try again.`;
         if (downloadBtn) {
           downloadBtn.disabled = false;
-          downloadBtn.innerHTML =
-            '<span class="download-icon">⬇️</span> Download Whisper';
+          downloadBtn.innerHTML = `<span class="download-icon">⬇️</span> Download ${
+            dependency.charAt(0).toUpperCase() + dependency.slice(1)
+          }`;
         }
       }
     } catch (error) {
@@ -376,8 +377,9 @@ document.addEventListener("DOMContentLoaded", function () {
       statusMessage.textContent = `Failed to install ${dependency}. Please try again.`;
       if (downloadBtn) {
         downloadBtn.disabled = false;
-        downloadBtn.innerHTML =
-          '<span class="download-icon">⬇️</span> Download Whisper';
+        downloadBtn.innerHTML = `<span class="download-icon">⬇️</span> Download ${
+          dependency.charAt(0).toUpperCase() + dependency.slice(1)
+        }`;
       }
     }
   }
@@ -528,6 +530,13 @@ document.addEventListener("DOMContentLoaded", function () {
     .addEventListener("click", async function () {
       console.log("Download Whisper clicked");
       await downloadDependency("whisper");
+    });
+
+  document
+    .getElementById("download-ollama-btn")
+    .addEventListener("click", async function () {
+      console.log("Download Ollama clicked");
+      await downloadDependency("ollama");
     });
 
   // Function to send message
