@@ -142,33 +142,6 @@ async function installWhisper() {
 
 // API Routes
 
-// Check dependencies status
-app.get("/api/dependencies/check", async (req, res) => {
-  try {
-    const ossInstalled = await checkDependency("openai-oss-2b");
-    const whisperInstalled = await checkDependency("openai-whisper");
-
-    res.json({
-      success: true,
-      dependencies: {
-        oss: {
-          name: "OpenAI OSS 2B",
-          installed: ossInstalled,
-        },
-        whisper: {
-          name: "OpenAI Whisper",
-          installed: whisperInstalled,
-        },
-      },
-      allInstalled: ossInstalled && whisperInstalled,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
 
 // Download missing dependencies
 app.post("/api/dependencies/download", async (req, res) => {
@@ -367,6 +340,139 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Check dependencies endpoint
+app.get("/api/dependencies/check", async (req, res) => {
+  try {
+    console.log("🔍 Checking dependencies...");
+    
+    const ollamaInstalled = await checkOllama();
+    const whisperInstalled = await checkWhisper();
+    
+    res.json({
+      success: true,
+      dependencies: {
+        ollama: {
+          name: "Ollama (AI Engine)",
+          installed: ollamaInstalled
+        },
+        whisper: {
+          name: "Whisper (Speech Recognition)", 
+          installed: whisperInstalled
+        }
+      },
+      allInstalled: ollamaInstalled && whisperInstalled
+    });
+  } catch (error) {
+    console.error("Dependency check failed:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to check dependencies"
+    });
+  }
+});
+
+// Install dependencies endpoint
+app.post("/api/dependencies/install", async (req, res) => {
+  try {
+    console.log("📥 Installing dependencies...");
+    
+    const results = {
+      ollama: false,
+      whisper: false
+    };
+    
+    // Check what needs to be installed
+    const ollamaInstalled = await checkOllama();
+    const whisperInstalled = await checkWhisper();
+    
+    // Install Ollama if missing
+    if (!ollamaInstalled) {
+      console.log("Installing Ollama...");
+      results.ollama = await installOllama();
+    } else {
+      results.ollama = true;
+    }
+    
+    // Install Whisper if missing
+    if (!whisperInstalled) {
+      console.log("Installing Whisper...");
+      results.whisper = await installWhisper();
+    } else {
+      results.whisper = true;
+    }
+    
+    res.json({
+      success: true,
+      results: results,
+      message: "Dependencies installation completed"
+    });
+  } catch (error) {
+    console.error("Dependency installation failed:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to install dependencies"
+    });
+  }
+});
+
+// Helper functions for dependency checking and installation
+async function checkOllama() {
+  try {
+    await execAsync("ollama --version");
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function checkWhisper() {
+  try {
+    await execAsync('python3 -c "import whisper"');
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function installOllama() {
+  try {
+    const platform = process.platform;
+    
+    if (platform === "darwin") {
+      // macOS - install via Homebrew
+      await execAsync("brew install ollama");
+      await execAsync("ollama serve &");
+    } else if (platform === "linux") {
+      // Linux - install via script
+      await execAsync("curl -fsSL https://ollama.ai/install.sh | sh");
+      await execAsync("ollama serve &");
+    } else if (platform === "win32") {
+      // Windows - download and install
+      const { downloadFile } = require("../download-utils");
+      const os = require("os");
+      const installerPath = path.join(os.tmpdir(), "ollama-installer.exe");
+      await downloadFile("https://ollama.ai/download/windows", installerPath);
+      await execAsync(`"${installerPath}" /S`);
+      await execAsync("ollama serve &");
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Ollama installation failed:", error);
+    return false;
+  }
+}
+
+async function installWhisper() {
+  try {
+    await execAsync("pip3 install openai-whisper");
+    return true;
+  } catch (error) {
+    console.error("Whisper installation failed:", error);
+    return false;
+  }
+}
 
 // Start server
 app.listen(PORT, () => {

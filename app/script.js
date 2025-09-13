@@ -44,9 +44,37 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Initialize web app (development)
-  function initializeWebApp() {
-    // Web app doesn't need auto-installer
-    showLandingPage();
+  async function initializeWebApp() {
+    // Web app also needs dependency checking
+    try {
+      // Show installation screen first
+      landingPage.classList.remove("active");
+      installationScreen.classList.add("active");
+
+      // Check dependencies via backend API
+      const response = await fetch("http://localhost:3001/api/dependencies/check");
+      const result = await response.json();
+      
+      if (result.success && result.dependencies.ollama.installed && result.dependencies.whisper.installed) {
+        // All dependencies installed, go to main interface
+        updateStatusMessage("All dependencies are installed. Starting app...");
+        setTimeout(() => showMainInterface(), 1000);
+      } else {
+        // Show what's missing and install
+        updateStatusMessage("Some dependencies are missing. Installing...");
+        const ollamaStatus = result.dependencies.ollama.installed ? "✅" : "❌";
+        const whisperStatus = result.dependencies.whisper.installed ? "✅" : "❌";
+        updateStatusMessage(`${ollamaStatus} Ollama ${whisperStatus} Whisper - Installing missing components...`);
+        
+        await installDependenciesWeb();
+        showMainInterface();
+      }
+    } catch (error) {
+      console.error("Failed to check dependencies:", error);
+      // Show main interface with error message
+      showMainInterface();
+      addMessageToChat("⚠️ Some dependencies may be missing. Please ensure Ollama and Whisper are installed.", "bot");
+    }
   }
 
   // Show landing page
@@ -70,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 300);
   }
 
-  // Install dependencies with progress tracking
+  // Install dependencies with progress tracking (Electron)
   async function installDependencies() {
     updateStatusMessage("Installing required components...");
 
@@ -86,6 +114,30 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     return success;
+  }
+
+  // Install dependencies (Web/Development)
+  async function installDependenciesWeb() {
+    try {
+      updateStatusMessage("Installing dependencies...");
+      
+      // Install via backend API
+      const response = await fetch("http://localhost:3001/api/dependencies/install", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      if (response.ok) {
+        updateStatusMessage("Installation complete!");
+        return true;
+      } else {
+        throw new Error("Installation failed");
+      }
+    } catch (error) {
+      console.error("Installation failed:", error);
+      updateStatusMessage("Installation failed. Please install manually: brew install ollama && pip3 install openai-whisper");
+      return false;
+    }
   }
 
   // Update installation progress
