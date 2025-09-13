@@ -41,6 +41,8 @@ const config = {
       },
     ],
     icon: "app/resources/icon.icns",
+    hardenedRuntime: false,
+    gatekeeperAssess: false,
   },
   win: {
     target: [
