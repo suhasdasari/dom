@@ -47,27 +47,59 @@ class AutoInstaller {
 
   async checkOllama() {
     try {
-      await execAsync("ollama --version");
+      console.log("🔍 Checking Ollama installation...");
+      const { stdout, stderr } = await execAsync("ollama --version");
       console.log("✅ Ollama is installed");
+      console.log("Ollama version:", stdout.trim());
+      if (stderr) console.log("Ollama stderr:", stderr);
       return true;
     } catch (error) {
       console.log("❌ Ollama not found");
+      console.log("Ollama check error:", error.message);
       return false;
     }
   }
 
   async checkWhisper() {
+    console.log("🔍 Checking Whisper installation...");
+    
+    // Method 1: Try Python import
     try {
       const { stdout, stderr } = await execAsync('python3 -c "import whisper"');
-      console.log("✅ Whisper is installed");
+      console.log("✅ Whisper is installed (Python import)");
       console.log("Whisper check stdout:", stdout);
       if (stderr) console.log("Whisper check stderr:", stderr);
       return true;
     } catch (error) {
-      console.log("❌ Whisper not found");
+      console.log("❌ Whisper not found via Python import");
       console.log("Whisper check error:", error.message);
-      return false;
     }
+
+    // Method 2: Try whisper command directly
+    try {
+      const { stdout, stderr } = await execAsync("whisper --help");
+      console.log("✅ Whisper is installed (command line)");
+      console.log("Whisper command stdout:", stdout);
+      if (stderr) console.log("Whisper command stderr:", stderr);
+      return true;
+    } catch (error) {
+      console.log("❌ Whisper not found via command line");
+      console.log("Whisper command error:", error.message);
+    }
+
+    // Method 3: Check if whisper is in PATH
+    try {
+      const { stdout } = await execAsync("which whisper");
+      if (stdout.trim()) {
+        console.log("✅ Whisper found in PATH:", stdout.trim());
+        return true;
+      }
+    } catch (error) {
+      console.log("❌ Whisper not in PATH");
+    }
+
+    console.log("❌ Whisper not found by any method");
+    return false;
   }
 
   async installOllama() {
@@ -146,11 +178,21 @@ class AutoInstaller {
     try {
       // Install Whisper via pip with --break-system-packages flag
       this.installProgress.whisper.progress = 30;
-      await execAsync("pip3 install openai-whisper --break-system-packages");
+      console.log("Running: pip3 install openai-whisper --break-system-packages");
+      
+      // Add timeout to prevent hanging
+      const installPromise = execAsync("pip3 install openai-whisper --break-system-packages");
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Installation timeout after 5 minutes")), 300000)
+      );
+      
+      await Promise.race([installPromise, timeoutPromise]);
+      console.log("✅ Whisper pip installation completed");
 
       this.installProgress.whisper.progress = 80;
 
       // Verify installation
+      console.log("Verifying Whisper installation...");
       await execAsync(
         "python3 -c \"import whisper; print('Whisper installed successfully')\""
       );
@@ -214,7 +256,15 @@ class AutoInstaller {
 
       // Install missing dependencies
       if (installTasks.length > 0) {
-        await Promise.all(installTasks);
+        console.log(`Installing ${installTasks.length} missing dependencies...`);
+        try {
+          await Promise.all(installTasks);
+        } catch (error) {
+          console.error("❌ One or more installations failed:", error);
+          throw error;
+        }
+      } else {
+        console.log("✅ All dependencies are already installed");
       }
 
       console.log("🎉 All dependencies installed successfully!");
