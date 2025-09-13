@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   installDependencies: () => ipcRenderer.invoke("install-dependencies"),
   getInstallProgress: () => ipcRenderer.invoke("get-install-progress"),
   isInstalling: () => ipcRenderer.invoke("is-installing"),
+  startBackendServer: () => ipcRenderer.invoke("start-backend-server"),
 });

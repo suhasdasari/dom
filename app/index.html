@@ -81,6 +81,57 @@
       </div>
     </div>
 
+    <!-- Missing Dependencies Screen -->
+    <div id="missing-dependencies-screen" class="page">
+      <div class="container">
+        <!-- Central Logo -->
+        <div class="logo-container">
+          <div class="logo-circle">
+            <img src="assets/logo.png" alt="Logo" class="logo-image" />
+          </div>
+        </div>
+
+        <!-- Missing Dependencies Content -->
+        <div class="missing-deps-content">
+          <h2>⚠️ Some dependencies may be missing</h2>
+          <p>
+            The following components are required for REMOAI Desktop to work
+            properly:
+          </p>
+
+          <div class="dependencies-list">
+            <div class="dependency-item" id="ollama-dependency">
+              <div class="dependency-info">
+                <span class="dependency-icon">✅</span>
+                <span class="dependency-name">Ollama (AI Engine)</span>
+                <span class="dependency-status installed">Installed</span>
+              </div>
+            </div>
+
+            <div class="dependency-item" id="whisper-dependency">
+              <div class="dependency-info">
+                <span class="dependency-icon">❌</span>
+                <span class="dependency-name"
+                  >Whisper (Speech Recognition)</span
+                >
+                <span class="dependency-status missing">Missing</span>
+              </div>
+              <button class="download-btn" id="download-whisper-btn">
+                <span class="download-icon">⬇️</span>
+                Download Whisper
+              </button>
+            </div>
+          </div>
+
+          <div class="installation-status">
+            <p id="missing-deps-status-message">
+              Click the download button to install missing components
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Interface -->
     <div id="main-interface" class="page">
       <div class="container">

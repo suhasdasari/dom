@@ -26,6 +26,19 @@ class AutoInstaller {
       this.checkWhisper(),
     ]);
 
+    console.log("Dependency check results:", {
+      ollama: {
+        status: checks[0].status,
+        value: checks[0].value,
+        reason: checks[0].reason,
+      },
+      whisper: {
+        status: checks[1].status,
+        value: checks[1].value,
+        reason: checks[1].reason,
+      },
+    });
+
     return {
       ollama: checks[0].status === "fulfilled" && checks[0].value,
       whisper: checks[1].status === "fulfilled" && checks[1].value,
@@ -45,11 +58,14 @@ class AutoInstaller {
 
   async checkWhisper() {
     try {
-      await execAsync('python3 -c "import whisper"');
+      const { stdout, stderr } = await execAsync('python3 -c "import whisper"');
       console.log("✅ Whisper is installed");
+      console.log("Whisper check stdout:", stdout);
+      if (stderr) console.log("Whisper check stderr:", stderr);
       return true;
     } catch (error) {
       console.log("❌ Whisper not found");
+      console.log("Whisper check error:", error.message);
       return false;
     }
   }
@@ -128,9 +144,9 @@ class AutoInstaller {
     this.installProgress.whisper.progress = 10;
 
     try {
-      // Install Whisper via pip
+      // Install Whisper via pip with --break-system-packages flag
       this.installProgress.whisper.progress = 30;
-      await execAsync("pip3 install openai-whisper");
+      await execAsync("pip3 install openai-whisper --break-system-packages");
 
       this.installProgress.whisper.progress = 80;
 

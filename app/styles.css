@@ -250,7 +250,7 @@ body {
 }
 
 .download-btn {
-  background: #007AFF;
+  background: #007aff;
   color: white;
   border: none;
   padding: 6px 12px;
@@ -262,7 +262,7 @@ body {
 }
 
 .download-btn:hover:not(:disabled) {
-  background: #0056CC;
+  background: #0056cc;
   transform: translateY(-1px);
 }
 
@@ -534,6 +534,115 @@ body {
   color: #d32f2f;
 }
 
+/* Missing Dependencies Screen Styles */
+#missing-dependencies-screen .container {
+  justify-content: center;
+  gap: 40px;
+}
+
+.missing-deps-content {
+  text-align: center;
+  max-width: 500px;
+}
+
+.missing-deps-content h2 {
+  font-size: 24px;
+  color: #ff6b35;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.missing-deps-content p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.dependencies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.dependency-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.dependency-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dependency-icon {
+  font-size: 20px;
+}
+
+.dependency-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.dependency-status {
+  font-size: 14px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.dependency-status.installed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.dependency-status.missing {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.download-btn:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.download-btn:active {
+  transform: translateY(0);
+}
+
+.download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.download-icon {
+  font-size: 16px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .container {
@@ -553,5 +662,20 @@ body {
   .get-started-btn {
     padding: 14px 28px;
     font-size: 15px;
+  }
+
+  .dependency-item {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .dependency-info {
+    justify-content: center;
+  }
+
+  .download-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

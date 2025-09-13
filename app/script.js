@@ -1,6 +1,9 @@
 document.addEventListener("DOMContentLoaded", function () {
   const landingPage = document.getElementById("landing-page");
   const installationScreen = document.getElementById("installation-screen");
+  const missingDepsScreen = document.getElementById(
+    "missing-dependencies-screen"
+  );
   const mainInterface = document.getElementById("main-interface");
   const getStartedBtn = document.getElementById("get-started-btn");
   const micBtn = document.getElementById("mic-btn");
@@ -10,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const messagesContainer = document.getElementById("conversation-messages");
 
   // Check if we're in Electron (packaged app)
-  const isElectron = window.require !== undefined;
+  const isElectron = window.electronAPI !== undefined;
 
   // Initialize app based on environment
   if (isElectron) {
@@ -22,20 +25,15 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize Electron app with auto-installer
   async function initializeElectronApp() {
     try {
-      // Show installation screen first
-      landingPage.classList.remove("active");
-      installationScreen.classList.add("active");
-
-      // Check dependencies
+      // Check dependencies first
       const deps = await window.electronAPI.checkDependencies();
 
       if (deps.ollama && deps.whisper) {
         // All dependencies installed, go to main interface
         showMainInterface();
       } else {
-        // Install missing dependencies
-        await installDependencies();
-        showMainInterface();
+        // Show missing dependencies screen
+        showMissingDependenciesScreen(deps);
       }
     } catch (error) {
       console.error("Failed to initialize app:", error);
@@ -90,13 +88,47 @@ document.addEventListener("DOMContentLoaded", function () {
   function showLandingPage() {
     landingPage.classList.add("active");
     installationScreen.classList.remove("active");
+    missingDepsScreen.classList.remove("active");
     mainInterface.classList.remove("active");
+  }
+
+  // Show missing dependencies screen
+  function showMissingDependenciesScreen(deps) {
+    landingPage.classList.remove("active");
+    installationScreen.classList.remove("active");
+    missingDepsScreen.classList.add("active");
+    mainInterface.classList.remove("active");
+
+    // Update dependency status
+    updateDependencyStatus("ollama", deps.ollama);
+    updateDependencyStatus("whisper", deps.whisper);
+  }
+
+  // Update dependency status in the UI
+  function updateDependencyStatus(dependency, isInstalled) {
+    const dependencyItem = document.getElementById(`${dependency}-dependency`);
+    const icon = dependencyItem.querySelector(".dependency-icon");
+    const status = dependencyItem.querySelector(".dependency-status");
+    const downloadBtn = dependencyItem.querySelector(".download-btn");
+
+    if (isInstalled) {
+      icon.textContent = "✅";
+      status.textContent = "Installed";
+      status.className = "dependency-status installed";
+      if (downloadBtn) downloadBtn.style.display = "none";
+    } else {
+      icon.textContent = "❌";
+      status.textContent = "Missing";
+      status.className = "dependency-status missing";
+      if (downloadBtn) downloadBtn.style.display = "flex";
+    }
   }
 
   // Show main interface
   function showMainInterface() {
     landingPage.classList.remove("active");
     installationScreen.classList.remove("active");
+    missingDepsScreen.classList.remove("active");
     mainInterface.classList.add("active");
 
     // Focus on the message input when entering the chat
@@ -293,6 +325,63 @@ document.addEventListener("DOMContentLoaded", function () {
     return success;
   }
 
+  // Download a specific dependency (Electron)
+  async function downloadDependency(dependency) {
+    const downloadBtn = document.getElementById(`download-${dependency}-btn`);
+    const statusMessage = document.getElementById(
+      "missing-deps-status-message"
+    );
+
+    if (downloadBtn) {
+      downloadBtn.disabled = true;
+      downloadBtn.innerHTML =
+        '<span class="download-icon">⏳</span> Installing...';
+    }
+
+    statusMessage.textContent = `Installing ${dependency}...`;
+
+    try {
+      // For now, we'll use the full installation process
+      // In the future, we could add individual dependency installation
+      const success = await window.electronAPI.installDependencies();
+
+      if (success) {
+        statusMessage.textContent = `${dependency} installed successfully! Starting backend...`;
+
+        // Start backend server after successful installation
+        await window.electronAPI.startBackendServer();
+
+        // Update the dependency status
+        updateDependencyStatus(dependency, true);
+
+        // Check if all dependencies are now installed
+        const deps = await window.electronAPI.checkDependencies();
+        if (deps.ollama && deps.whisper) {
+          statusMessage.textContent =
+            "All dependencies installed! Backend started. Opening main interface...";
+          setTimeout(() => {
+            showMainInterface();
+          }, 2000);
+        }
+      } else {
+        statusMessage.textContent = `Failed to install ${dependency}. Please try again.`;
+        if (downloadBtn) {
+          downloadBtn.disabled = false;
+          downloadBtn.innerHTML =
+            '<span class="download-icon">⬇️</span> Download Whisper';
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to install ${dependency}:`, error);
+      statusMessage.textContent = `Failed to install ${dependency}. Please try again.`;
+      if (downloadBtn) {
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML =
+          '<span class="download-icon">⬇️</span> Download Whisper';
+      }
+    }
+  }
+
   // Install dependencies (Web/Development)
   async function installDependenciesWeb() {
     try {
@@ -408,7 +497,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Microphone button clicked");
 
     // Check if we're in Electron and request permissions
-    if (window.require) {
+    if (isElectron) {
       requestMicrophonePermission()
         .then(() => {
           toggleRecording();
@@ -432,6 +521,14 @@ document.addEventListener("DOMContentLoaded", function () {
     mainInterface.classList.remove("active");
     landingPage.classList.add("active");
   });
+
+  // Handle download button clicks
+  document
+    .getElementById("download-whisper-btn")
+    .addEventListener("click", async function () {
+      console.log("Download Whisper clicked");
+      await downloadDependency("whisper");
+    });
 
   // Function to send message
   async function sendMessage() {
@@ -576,7 +673,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Microphone access denied:", err);
 
         // Check if we're in Electron (packaged app)
-        if (window.require) {
+        if (isElectron) {
           throw new Error(
             "Microphone access denied. Please:\n1. Go to System Preferences > Security & Privacy > Microphone\n2. Check the box next to REMOAI Desktop\n3. Restart the app and try again."
           );
