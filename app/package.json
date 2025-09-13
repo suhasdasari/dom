@@ -7,12 +7,12 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "start-with-ollama": "./start-ollama.sh && npm start",
-    "build": "electron-builder --config ../electron-builder-config.js",
-    "build-mac": "electron-builder --mac --config ../electron-builder-config.js",
-    "build-win": "electron-builder --win --config ../electron-builder-config.js",
-    "build-linux": "electron-builder --linux --config ../electron-builder-config.js",
-    "dist": "electron-builder --publish=never --config ../electron-builder-config.js",
-    "package": "../package-app.sh"
+    "build": "electron-builder --config ../configs/electron-builder-config.js",
+    "build-mac": "electron-builder --mac --config ../configs/electron-builder-config.js",
+    "build-win": "electron-builder --win --config ../configs/electron-builder-config.js",
+    "build-linux": "electron-builder --linux --config ../configs/electron-builder-config.js",
+    "dist": "electron-builder --publish=never --config ../configs/electron-builder-config.js",
+    "package": "../scripts/package-app.sh"
   },
   "keywords": [
     "desktop",

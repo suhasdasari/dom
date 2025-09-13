@@ -1,71 +1,106 @@
 # REMOAI Desktop
 
-A voice-enabled AI personal assistant desktop app powered by Ollama and Whisper.
+A cross-platform voice AI assistant built with Electron, featuring speech-to-text, AI chat powered by Ollama, and automatic dependency installation.
 
-## Features
+## 🚀 Quick Start
 
-- 🎤 **Voice Input**: Click to record and transcribe speech using OpenAI Whisper
-- 💬 **Text Chat**: Type messages directly in the chat interface
-- 🤖 **Remo AI Assistant**: Get help with tasks, reminders, planning, and everyday requests
-- ⚡ **Real-time Processing**: Powered by Ollama for fast AI responses
+### Prerequisites
 
-## Quick Start
+- Node.js 16+
+- npm or yarn
 
-### Option 1: Automated Setup (Recommended)
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/suhasdasari/dom.git
-cd dom
+git clone <repository-url>
+cd rda
 
-# Run the automated installer
-./install-deps.sh
+# Install dependencies
+cd app
+npm install
+
+# Start the application
+npm start
 ```
 
-### Option 2: Manual Setup
+## 📁 Project Structure
 
-See [SETUP.md](SETUP.md) for detailed installation instructions.
+```
+rda/
+├── app/                    # Main application code
+│   ├── assets/            # Images and icons
+│   ├── backend/           # Backend services
+│   ├── resources/         # App resources
+│   ├── main.js           # Electron main process
+│   ├── index.html        # Main UI
+│   ├── script.js         # Frontend logic
+│   ├── styles.css        # Styling
+│   └── package.json      # App dependencies
+├── configs/               # Configuration files
+│   └── electron-builder-config.js
+├── docs/                  # Documentation
+│   ├── README.md
+│   ├── SETUP.md
+│   └── USER_GUIDE.md
+├── scripts/               # Build and utility scripts
+│   ├── build-mac.sh
+│   ├── build-windows.sh
+│   └── build-all.sh
+└── README.md             # This file
+```
 
-## Usage
+## 🛠️ Building
 
-1. **Start Ollama:**
+### Mac (DMG)
 
-   ```bash
-   ollama serve
-   ```
+```bash
+cd app
+npm run build-mac
+```
 
-2. **Start the backend:**
+### Windows (EXE)
 
-   ```bash
-   cd backend
-   npm start
-   ```
+```bash
+cd app
+npm run build-win
+```
 
-3. **Launch the app:**
-   ```bash
-   cd app
-   npm start
-   ```
+### Linux (AppImage)
 
-## System Requirements
+```bash
+cd app
+npm run build-linux
+```
 
-- **macOS**: 10.15+ (Intel/Apple Silicon)
-- **Windows**: 10+ (64-bit)
-- **Linux**: Ubuntu 18.04+ or equivalent
-- **RAM**: 8GB+ recommended
-- **Storage**: 5GB+ free space
+### All Platforms
 
-## Dependencies
+```bash
+./scripts/build-all.sh
+```
 
-- [Ollama](https://ollama.ai) - AI model runtime
-- [FFmpeg](https://ffmpeg.org) - Audio processing
-- [OpenAI Whisper](https://github.com/openai/whisper) - Speech recognition
-- Node.js 16+ - JavaScript runtime
+## ✨ Features
 
-## Troubleshooting
+- 🎤 **Voice Input** - Speech-to-text using OpenAI Whisper
+- 🤖 **AI Chat** - Powered by Ollama with Remo persona
+- 🔧 **Auto-Installer** - Automatically installs dependencies
+- 🖥️ **Cross-Platform** - Works on Mac, Windows, and Linux
+- 🎨 **Modern UI** - Clean, responsive interface
 
-See [SETUP.md](SETUP.md) for common issues and solutions.
+## 📖 Documentation
 
-## License
+- [Setup Guide](docs/SETUP.md) - Developer setup instructions
+- [User Guide](docs/USER_GUIDE.md) - End-user documentation
+- [Distribution Guide](docs/DISTRIBUTION_GUIDE.md) - How to distribute the app
 
-MIT
+## 🚀 Distribution
+
+The app creates native installers for each platform:
+
+- **Mac**: DMG installer
+- **Windows**: NSIS installer + Portable EXE
+- **Linux**: AppImage + DEB package
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.

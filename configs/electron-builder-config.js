@@ -23,7 +23,7 @@ const config = {
   ],
   extraResources: [
     {
-      from: "../backend",
+      from: "../app/backend",
       to: "backend",
       filter: ["**/*", "!node_modules/**/*"],
     },
@@ -32,11 +32,15 @@ const config = {
     category: "public.app-category.productivity",
     target: [
       {
-        target: "dir",
-        arch: ["arm64"],
+        target: "dmg",
+        arch: ["x64", "arm64"],
+      },
+      {
+        target: "zip",
+        arch: ["x64", "arm64"],
       },
     ],
-    icon: "app/resources/icon.icns",
+    icon: "resources/icon.icns",
     hardenedRuntime: false,
     gatekeeperAssess: false,
     identity: null,
@@ -47,7 +51,7 @@ const config = {
   win: {
     target: [
       {
-        target: "dir",
+        target: "nsis",
         arch: ["x64"],
       },
       {
@@ -55,7 +59,7 @@ const config = {
         arch: ["x64"],
       },
     ],
-    icon: "app/resources/icon.ico",
+    icon: "resources/icon.ico",
     requestedExecutionLevel: "asInvoker",
     verifyUpdateCodeSignature: false,
   },
@@ -70,15 +74,15 @@ const config = {
         arch: ["x64"],
       },
     ],
-    icon: "app/resources/icon.png",
+    icon: "resources/icon.png",
     category: "Office",
   },
   nsis: {
     oneClick: false,
     allowToChangeInstallationDirectory: true,
-    installerIcon: "app/resources/icon.ico",
-    uninstallerIcon: "app/resources/icon.ico",
-    installerHeaderIcon: "app/resources/icon.ico",
+    installerIcon: "resources/icon.ico",
+    uninstallerIcon: "resources/icon.ico",
+    installerHeaderIcon: "resources/icon.ico",
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
     shortcutName: "REMOAI Desktop",

@@ -257,12 +257,14 @@ app.post("/api/transcribe", async (req, res) => {
       const wavFileName = `audio_${Date.now()}.wav`;
       const wavFilePath = path.join(tempDir, wavFileName);
 
-      const transcodeCommand = `ffmpeg -y -i "${audioFilePath}" -ac 1 -ar 16000 -vn -loglevel error "${wavFilePath}"`;
+      const transcodeCommand = `/opt/homebrew/bin/ffmpeg -y -i "${audioFilePath}" -ac 1 -ar 16000 -vn -loglevel error "${wavFilePath}"`;
+      console.log("Running FFmpeg command:", transcodeCommand);
       try {
         await execAsync(transcodeCommand);
         console.log("Audio transcoded to WAV");
       } catch (ffErr) {
         console.error("FFmpeg transcode failed:", ffErr.message);
+        console.error("FFmpeg error details:", ffErr);
         // If ffmpeg missing, provide a helpful message
         try {
           await fs.unlink(audioFilePath);
