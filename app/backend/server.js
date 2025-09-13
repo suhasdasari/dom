@@ -415,6 +415,38 @@ app.post("/api/dependencies/install", async (req, res) => {
   }
 });
 
+// Install specific dependency endpoint
+app.post("/api/dependencies/install/:dependency", async (req, res) => {
+  try {
+    const { dependency } = req.params;
+    console.log(`📥 Installing ${dependency}...`);
+
+    let result = false;
+    
+    if (dependency === 'ollama') {
+      result = await installOllama();
+    } else if (dependency === 'whisper') {
+      result = await installWhisper();
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid dependency name"
+      });
+    }
+
+    res.json({
+      success: result,
+      message: result ? `${dependency} installed successfully` : `Failed to install ${dependency}`,
+    });
+  } catch (error) {
+    console.error(`${req.params.dependency} installation failed:`, error);
+    res.status(500).json({
+      success: false,
+      error: `Failed to install ${req.params.dependency}`,
+    });
+  }
+});
+
 // Helper functions for dependency checking and installation
 async function checkOllama() {
   try {

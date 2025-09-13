@@ -233,6 +233,11 @@ body {
 .progress-item {
   margin-bottom: 20px;
   text-align: left;
+  position: relative;
+}
+
+.progress-item.installed {
+  opacity: 0.7;
 }
 
 .progress-label {
@@ -242,6 +247,33 @@ body {
   margin-bottom: 8px;
   font-size: 14px;
   color: #333;
+}
+
+.download-btn {
+  background: #007AFF;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+}
+
+.download-btn:hover:not(:disabled) {
+  background: #0056CC;
+  transform: translateY(-1px);
+}
+
+.download-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.download-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .status-icon {
